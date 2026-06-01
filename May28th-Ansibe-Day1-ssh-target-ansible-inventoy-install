@@ -1,0 +1,997 @@
+Ansible - COnfiguration Managment tool CMT
+We have other tools also puppet and chef --> Alternate tools 
+
+For example 3 servers are their ans same application running in all 3 servers
+
+If we have one server we can install agent and connect ssh and connect all servers and execute things 
+
+
+if you install anisble into any one of the instance so we have downdload agent then ansible will do connect to each server and install agent in all ec2's
+
+How ansible will connect servers it will use ssh 
+
+Target nodes 
+
+so inventory file we need to give all servers details in ansible server 
+So we have ansible playbook.yaml 
+
+So 3 things ssh connection ,ansible playbook.yaml,inventory file 
+
+How ansible connect to sever - ssh 
+what configuration playbook.yml
+which servers :Inventory file 
+
+****NOte : I can configure anyconfiguration through launch template script also so when asg create a server script will execute agent will be ready 
+
+Why anisble : Post creation configuration we cant handle through LT we have to delete and create a server to update any script so we cant update script while server is running mode 
+so ideally if suppose asg going to delete the server and create new server then ideally lambda should be connected and it should trigger ansible scripts to update required configurations in real time
+
+
+So in real time organizations 
+
+Lambda will run playbook yaml 
+asg
+targetnodes
+ansible server 
+playbook
+inventory 
+ssh 
+tags 
+cloudwatch,node exportrer agents etc etc 
+
+Developer / Application Team
+        |
+        v
+Writes Code + Ansible Playbooks
+        |
+        v
+Git Repository (GitHub/GitLab/Bitbucket)
+        |
+        v
+Pull Request (PR)
+        |
+        v
+Code Review + Security Review
+        |
+        v
+Merge to Main Branch
+        |
+        v
+CI/CD Pipeline Triggered
+(Jenkins/GitHub Actions/GitLab CI)
+        |
+        +--> ansible-lint
+        +--> syntax-check
+        +--> security scan
+        +--> artifact build
+        |
+        v
+Terraform Execution
+        |
+        +--> Create VPC
+        +--> Create Subnets
+        +--> Create Security Groups
+        +--> Create IAM Roles
+        +--> Create Load Balancer
+        +--> Create Launch Template
+        +--> Create Auto Scaling Group
+        |
+        v
+Launch Template
+        |
+        +--> AMI
+        +--> Instance Type
+        +--> IAM Role
+        +--> Security Groups
+        +--> Volumes
+        +--> User Data
+        |
+        v
+Auto Scaling Group Launches EC2
+        |
+        +--> web01
+        +--> web02
+        +--> web03
+        |
+        v
+EC2 State = Running
+        |
+        v
+EventBridge Detects Event
+        |
+        v
+Lambda Triggered
+        |
+        +--> Call AWX API
+        +--> Call Jenkins Job
+        +--> Call Ansible Automation Platform
+        |
+        v
+AWX / Ansible Controller
+        |
+        v
+Dynamic Inventory Plugin
+        |
+        +--> Query AWS API
+        +--> Discover EC2 by Tags
+        |
+        v
+Inventory Generated
+        |
+        +--> Prod Servers
+        +--> UAT Servers
+        +--> DR Servers
+        |
+        v
+Ansible Control Node
+        |
+        +--> Read Inventory
+        +--> Read Playbook
+        +--> Read Variables
+        +--> Read Vault Secrets
+        |
+        v
+Connection Establishment
+        |
+        +--> SSH
+        OR
+        +--> AWS SSM Agent
+        |
+        v
+Gather Facts
+        |
+        +--> OS Version
+        +--> CPU
+        +--> Memory
+        +--> Hostname
+        +--> Network
+        +--> Mount Points
+        |
+        v
+OS Hardening Playbook
+        |
+        +--> Disable Root Login
+        +--> Password Policies
+        +--> Firewall Rules
+        +--> Auditd
+        +--> SELinux
+        +--> Security Patches
+        |
+        v
+Create Service Accounts
+        |
+        +--> appuser
+        +--> monitoringuser
+        +--> deploymentuser
+        |
+        v
+Install Required Packages
+        |
+        +--> Java
+        +--> Python
+        +--> Docker
+        +--> AWS CLI
+        +--> kubectl
+        +--> nginx
+        |
+        v
+Install Monitoring Agents
+        |
+        +--> CloudWatch Agent
+        +--> Datadog Agent
+        +--> Node Exporter
+        +--> Splunk Universal Forwarder
+        |
+        v
+Configure Monitoring Agents
+        |
+        +--> Metrics Paths
+        +--> Log Paths
+        +--> Dashboards
+        +--> Alert Rules
+        |
+        v
+Download Application Artifact
+        |
+        +--> Nexus
+        +--> Artifactory
+        +--> JFrog
+        +--> S3
+        |
+        v
+Deploy Application
+        |
+        +--> Copy WAR/JAR/Binary
+        +--> Extract Files
+        +--> Set Permissions
+        |
+        v
+Apply Configuration Templates
+        |
+        +--> application.properties
+        +--> nginx.conf
+        +--> database.conf
+        +--> environment variables
+        |
+        v
+Start Services
+        |
+        +--> Application Service
+        +--> nginx
+        +--> Monitoring Agents
+        |
+        v
+Health Checks
+        |
+        +--> HTTP 200 Check
+        +--> API Health Endpoint
+        +--> Database Connectivity
+        +--> Port Validation
+        |
+        v
+Register Instance with Load Balancer
+        |
+        +--> Target Group Registration
+        +--> Health Verification
+        |
+        v
+Application Becomes Live
+        |
+        v
+Customer Traffic Arrives
+        |
+        v
+Load Balancer
+        |
+        v
+Application Servers
+        |
+        v
+Monitoring Begins
+        |
+        +--> CloudWatch
+        +--> Datadog
+        +--> Prometheus
+        +--> Grafana
+        +--> Splunk
+        |
+        v
+Metrics Collection
+        |
+        +--> CPU
+        +--> Memory
+        +--> Disk
+        +--> Network
+        +--> Application Metrics
+        |
+        v
+Logs Collection
+        |
+        +--> Application Logs
+        +--> OS Logs
+        +--> Audit Logs
+        |
+        v
+Dashboards
+        |
+        +--> Grafana
+        +--> Datadog
+        +--> CloudWatch
+        +--> Splunk
+        |
+        v
+Alert Generation
+        |
+        +--> CPU > 90%
+        +--> Disk > 85%
+        +--> Service Down
+        +--> API Errors
+        |
+        v
+Alert Manager
+        |
+        +--> PagerDuty
+        +--> ServiceNow
+        +--> Microsoft Teams
+        +--> Email
+        |
+        v
+Production Support Team
+        |
+        +--> Investigate Splunk Logs
+        +--> Check CloudWatch Metrics
+        +--> Check Datadog Dashboards
+        +--> Check Prometheus Alerts
+        |
+        v
+Issue Identified
+        |
+        +--> Service Crash
+        +--> Disk Full
+        +--> Memory Leak
+        +--> Deployment Failure
+        |
+        v
+Auto-Healing (Optional)
+        |
+        +--> CloudWatch Alarm
+        +--> Lambda Trigger
+        +--> AWX Job
+        +--> Ansible Playbook
+        +--> Restart Service
+        +--> Health Check
+        |
+        v
+Application Restored
+        |
+        v
+Business Continues
+
+everything will be linked 
+
+
+
+# SSH Key Authentication Notes
+
+## Rule #1
+
+SSH authentication is always:
+
+```text
+User ---> User
+```
+
+Not:
+
+```text
+Server ---> Server
+```
+
+SSH trusts a specific user account on the target machine.
+
+---
+
+## Example
+
+### Source Server
+
+```bash
+/root/.ssh/id_rsa
+/root/.ssh/id_rsa.pub
+```
+
+Public key:
+
+```bash
+cat /root/.ssh/id_rsa.pub
+```
+
+---
+
+### Target Server
+
+If the public key is copied to:
+
+```bash
+/home/ec2-user/.ssh/authorized_keys
+```
+
+then only this login works:
+
+```bash
+ssh ec2-user@TARGET-IP
+```
+
+---
+
+## Why "ssh TARGET-IP" Failed
+
+When logged in as root:
+
+```bash
+ssh 172.31.84.48
+```
+
+SSH automatically assumes:
+
+```bash
+ssh root@172.31.84.48
+```
+
+SSH checks:
+
+```bash
+/root/.ssh/authorized_keys
+```
+
+on the target server.
+
+Since the public key was not there, authentication failed.
+
+---
+
+## Why It Worked Later
+
+After copying the public key to:
+
+```bash
+/root/.ssh/authorized_keys
+```
+
+on the target server:
+
+```bash
+ssh 172.31.84.48
+```
+
+worked successfully.
+
+Because now:
+
+```text
+root ---> root
+```
+
+authentication was allowed.
+
+---
+
+## Mapping Table
+
+| Login Command       | Authorized Keys Location            |
+| ------------------- | ----------------------------------- |
+| ssh root@server     | /root/.ssh/authorized_keys          |
+| ssh ec2-user@server | /home/ec2-user/.ssh/authorized_keys |
+| ssh ubuntu@server   | /home/ubuntu/.ssh/authorized_keys   |
+| ssh ansible@server  | /home/ansible/.ssh/authorized_keys  |
+
+---
+
+## Required Permissions
+
+### For ec2-user
+
+```bash
+chown -R ec2-user:ec2-user /home/ec2-user/.ssh
+
+chmod 700 /home/ec2-user/.ssh
+
+chmod 600 /home/ec2-user/.ssh/authorized_keys
+```
+
+### For root
+
+```bash
+chmod 700 /root/.ssh
+
+chmod 600 /root/.ssh/authorized_keys
+```
+
+---
+
+## SSH Authentication Flow
+
+```text
+1. User runs ssh command
+
+2. SSH reads private key
+   ~/.ssh/id_rsa
+
+3. Target server checks
+   authorized_keys
+
+4. Public key match found
+
+5. Login successful
+
+6. Shell session opened
+```
+
+---
+
+## Real-Time Ansible Flow
+
+```text
+Ansible Server
+      |
+      | SSH
+      v
+ec2-user@app-server
+      |
+      | sudo / become
+      v
+root privileges
+```
+
+Industry best practice:
+
+```yaml
+ansible_user: ec2-user
+
+become: yes
+```
+
+Instead of:
+
+```yaml
+ansible_user: root
+```
+
+---
+
+## Interview Point
+
+Question:
+How does passwordless SSH work?
+
+Answer:
+
+1. Generate public/private key pair using ssh-keygen.
+2. Keep private key on source server.
+3. Copy public key to target server's authorized_keys file.
+4. SSH uses the private key to prove identity.
+5. If the public key matches, login succeeds without a password.
+
+Key Concept:
+
+```text
+Private Key -> Source Machine
+
+Public Key -> Target Machine (authorized_keys)
+```
+
+
+
+By Using Ansible - we can adhoc commands ex : 
+
+ansible -i inventory all -a "yum install git -y" -b
+
+all inventory
+-a argument 
+
+
+Ansible 
+
+
+bash: ansible: command not found
+[root@ip-172-31-86-120 .ssh]# ll
+total 16
+-rw-------. 1 root root    0 Jun  1 18:41 authorized_keys
+-rw-------. 1 root root 2622 Jun  1 18:44 id_rsa
+-rw-r--r--. 1 root root  588 Jun  1 18:44 id_rsa.pub
+-rw-------. 1 root root  268 Jun  1 18:50 known_hosts
+-rw-r--r--. 1 root root   94 Jun  1 18:46 known_hosts.old
+[root@ip-172-31-86-120 .ssh]# dnf install ansible -y
+Amazon Linux 2023 Kernel Livepatch repository                                                                                                                                      212 kB/s |  47 kB     00:00    
+Dependencies resolved.
+===================================================================================================================================================================================================================
+ Package                                           Architecture                                Version                                                      Repository                                        Size
+===================================================================================================================================================================================================================
+Installing:
+ ansible                                           noarch                                      8.3.0-1.amzn2023.0.2                                         amazonlinux                                       32 M
+Installing dependencies:
+ ansible-core                                      x86_64                                      2.15.3-1.amzn2023.0.11                                       amazonlinux                                      2.5 M
+ git-core                                          x86_64                                      2.50.1-1.amzn2023.0.1                                        amazonlinux                                      4.9 M
+ sshpass                                           x86_64                                      1.09-6.amzn2023.0.1                                          amazonlinux                                       28 k
+
+Transaction Summary
+===================================================================================================================================================================================================================
+Install  4 Packages
+
+Total download size: 40 M
+Installed size: 552 M
+Downloading Packages:
+(1/4): ansible-core-2.15.3-1.amzn2023.0.11.x86_64.rpm                                                                                                                               20 MB/s | 2.5 MB     00:00    
+(2/4): git-core-2.50.1-1.amzn2023.0.1.x86_64.rpm                                                                                                                                    30 MB/s | 4.9 MB     00:00    
+(3/4): sshpass-1.09-6.amzn2023.0.1.x86_64.rpm                                                                                                                                      734 kB/s |  28 kB     00:00    
+(4/4): ansible-8.3.0-1.amzn2023.0.2.noarch.rpm                                                                                                                                      61 MB/s |  32 MB     00:00    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                               69 MB/s |  40 MB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                                           1/1 
+  Installing       : sshpass-1.09-6.amzn2023.0.1.x86_64                                                                                                                                                        1/4 
+  Installing       : git-core-2.50.1-1.amzn2023.0.1.x86_64                                                                                                                                                     2/4 
+  Installing       : ansible-core-2.15.3-1.amzn2023.0.11.x86_64                                                                                                                                                3/4 
+  Installing       : ansible-8.3.0-1.amzn2023.0.2.noarch                                                                                                                                                       4/4 
+  Running scriptlet: ansible-8.3.0-1.amzn2023.0.2.noarch                                                                                                                                                       4/4 
+  Verifying        : ansible-8.3.0-1.amzn2023.0.2.noarch                                                                                                                                                       1/4 
+  Verifying        : ansible-core-2.15.3-1.amzn2023.0.11.x86_64                                                                                                                                                2/4 
+  Verifying        : git-core-2.50.1-1.amzn2023.0.1.x86_64                                                                                                                                                     3/4 
+  Verifying        : sshpass-1.09-6.amzn2023.0.1.x86_64                                                                                                                                                        4/4 
+
+Installed:
+  ansible-8.3.0-1.amzn2023.0.2.noarch               ansible-core-2.15.3-1.amzn2023.0.11.x86_64               git-core-2.50.1-1.amzn2023.0.1.x86_64               sshpass-1.09-6.amzn2023.0.1.x86_64              
+
+Complete!
+[root@ip-172-31-86-120 .ssh]# vi inventory
+[root@ip-172-31-86-120 .ssh]# ansible -i inventory all -a "yum install git -y" -b
+[WARNING]: Platform linux on host 172.31.84.48 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.84.48 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:11:55 ago on Mon Jun  1 18:55:02 2026.
+Dependencies resolved.
+================================================================================
+ Package             Arch      Version                     Repository      Size
+================================================================================
+Installing:
+ git                 x86_64    2.50.1-1.amzn2023.0.1       amazonlinux     53 k
+Installing dependencies:
+ git-core-doc        noarch    2.50.1-1.amzn2023.0.1       amazonlinux    2.8 M
+ perl-Error          noarch    1:0.17030-2.amzn2023.0.1    amazonlinux     42 k
+ perl-File-Find      noarch    1.37-477.amzn2023.0.8       amazonlinux     25 k
+ perl-Git            noarch    2.50.1-1.amzn2023.0.1       amazonlinux     41 k
+ perl-TermReadKey    x86_64    2.38-9.amzn2023.0.3         amazonlinux     36 k
+ perl-lib            x86_64    0.65-477.amzn2023.0.8       amazonlinux     15 k
+
+Transaction Summary
+================================================================================
+Install  7 Packages
+
+Total download size: 3.0 M
+Installed size: 18 M
+Downloading Packages:
+(1/7): git-2.50.1-1.amzn2023.0.1.x86_64.rpm     1.1 MB/s |  53 kB     00:00    
+(2/7): perl-Error-0.17030-2.amzn2023.0.1.noarch 839 kB/s |  42 kB     00:00    
+(3/7): perl-File-Find-1.37-477.amzn2023.0.8.noa 984 kB/s |  25 kB     00:00    
+(4/7): git-core-doc-2.50.1-1.amzn2023.0.1.noarc  30 MB/s | 2.8 MB     00:00    
+(5/7): perl-Git-2.50.1-1.amzn2023.0.1.noarch.rp 869 kB/s |  41 kB     00:00    
+(6/7): perl-TermReadKey-2.38-9.amzn2023.0.3.x86 1.2 MB/s |  36 kB     00:00    
+(7/7): perl-lib-0.65-477.amzn2023.0.8.x86_64.rp 337 kB/s |  15 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                            17 MB/s | 3.0 MB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : perl-lib-0.65-477.amzn2023.0.8.x86_64                  1/7 
+  Installing       : perl-TermReadKey-2.38-9.amzn2023.0.3.x86_64            2/7 
+  Installing       : perl-File-Find-1.37-477.amzn2023.0.8.noarch            3/7 
+  Installing       : perl-Error-1:0.17030-2.amzn2023.0.1.noarch             4/7 
+  Installing       : git-core-doc-2.50.1-1.amzn2023.0.1.noarch              5/7 
+  Installing       : perl-Git-2.50.1-1.amzn2023.0.1.noarch                  6/7 
+  Installing       : git-2.50.1-1.amzn2023.0.1.x86_64                       7/7 
+  Running scriptlet: git-2.50.1-1.amzn2023.0.1.x86_64                       7/7 
+  Verifying        : git-2.50.1-1.amzn2023.0.1.x86_64                       1/7 
+  Verifying        : git-core-doc-2.50.1-1.amzn2023.0.1.noarch              2/7 
+  Verifying        : perl-Error-1:0.17030-2.amzn2023.0.1.noarch             3/7 
+  Verifying        : perl-File-Find-1.37-477.amzn2023.0.8.noarch            4/7 
+  Verifying        : perl-Git-2.50.1-1.amzn2023.0.1.noarch                  5/7 
+  Verifying        : perl-TermReadKey-2.38-9.amzn2023.0.3.x86_64            6/7 
+  Verifying        : perl-lib-0.65-477.amzn2023.0.8.x86_64                  7/7 
+
+Installed:
+  git-2.50.1-1.amzn2023.0.1.x86_64                                              
+  git-core-doc-2.50.1-1.amzn2023.0.1.noarch                                     
+  perl-Error-1:0.17030-2.amzn2023.0.1.noarch                                    
+  perl-File-Find-1.37-477.amzn2023.0.8.noarch                                   
+  perl-Git-2.50.1-1.amzn2023.0.1.noarch                                         
+  perl-TermReadKey-2.38-9.amzn2023.0.3.x86_64                                   
+  perl-lib-0.65-477.amzn2023.0.8.x86_64                                         
+
+Complete!
+[root@ip-172-31-86-120 .ssh]# 
+
+
+Target Server 
+
+172.31.84.48 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG6Jv6o2uFZ20kzbZ80rT6msAwNFfGvERhAK3ZF5dqfa
+[root@ip-172-31-84-48 .ssh]# ll
+total 12
+-rw-------. 1 root root 587 Jun  1 18:50 authorized_keys
+-rw-r--r--. 1 root root  13 Jun  1 19:03 inventory
+-rw-r--r--. 1 root root  94 Jun  1 18:58 known_hosts
+[root@ip-172-31-84-48 .ssh]# cat inventory 
+172.31.84.48
+[root@ip-172-31-84-48 .ssh]# cat known_hosts 
+172.31.84.48 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG6Jv6o2uFZ20kzbZ80rT6msAwNFfGvERhAK3ZF5dqfa
+[root@ip-172-31-84-48 .ssh]# git --version
+git version 2.50.1
+[root@ip-172-31-84-48 .ssh]# date
+Mon Jun  1 19:07:09 UTC 2026
+[root@ip-172-31-84-48 .ssh]# 
+
+
+
+ansible 
+
+root@ip-172-31-86-120 .ssh]# ansible -i inventory all -a "yum install tree -y" -b
+[WARNING]: Platform linux on host 172.31.84.48 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.84.48 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:13:34 ago on Mon Jun  1 18:55:02 2026.
+Dependencies resolved.
+================================================================================
+ Package     Architecture  Version                     Repository          Size
+================================================================================
+Installing:
+ tree        x86_64        1.8.0-6.amzn2023.0.2        amazonlinux         56 k
+
+Transaction Summary
+================================================================================
+Install  1 Package
+
+Total download size: 56 k
+Installed size: 113 k
+Downloading Packages:
+tree-1.8.0-6.amzn2023.0.2.x86_64.rpm            1.4 MB/s |  56 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           687 kB/s |  56 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Running scriptlet: tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Verifying        : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+
+Installed:
+  tree-1.8.0-6.amzn2023.0.2.x86_64                                              
+
+Complete!
+[root@ip-172-31-86-120 .ssh]# ansible -i inventory all -a "yum install python -y" -b
+[WARNING]: Platform linux on host 172.31.84.48 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.84.48 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:13:45 ago on Mon Jun  1 18:55:02 2026.
+Dependencies resolved.
+================================================================================
+ Package                     Arch    Version                 Repository    Size
+================================================================================
+Installing:
+ python-unversioned-command  noarch  3.9.25-1.amzn2023.0.5   amazonlinux   12 k
+
+Transaction Summary
+================================================================================
+Install  1 Package
+
+Total download size: 12 k
+Installed size: 23  
+Downloading Packages:
+python-unversioned-command-3.9.25-1.amzn2023.0. 350 kB/s |  12 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           149 kB/s |  12 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : python-unversioned-command-3.9.25-1.amzn2023.0.5.noa   1/1 
+  Running scriptlet: python-unversioned-command-3.9.25-1.amzn2023.0.5.noa   1/1 
+  Verifying        : python-unversioned-command-3.9.25-1.amzn2023.0.5.noa   1/1 
+
+Installed:
+  python-unversioned-command-3.9.25-1.amzn2023.0.5.noarch                       
+
+Complete!
+[root@ip-172-31-86-120 .ssh]# 
+
+Target 
+
+[root@ip-172-31-84-48 .ssh]# git --version
+git version 2.50.1
+[root@ip-172-31-84-48 .ssh]# date
+Mon Jun  1 19:07:09 UTC 2026
+[root@ip-172-31-84-48 .ssh]# python --version
+Python 3.9.25
+[root@ip-172-31-84-48 .ssh]# tree
+.
+├── authorized_keys
+├── inventory
+└── known_hosts
+
+0 directories, 3 files
+
+
+Ansible 
+[root@ip-172-31-86-120 .ssh]# ansible all -a "yum install mariadb105  -y" -b
+[WARNING]: Platform linux on host 172.31.84.48 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.84.48 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:15:27 ago on Mon Jun  1 18:55:02 2026.
+Dependencies resolved.
+================================================================================
+ Package                    Arch   Version                    Repository   Size
+================================================================================
+Installing:
+ mariadb105                 x86_64 3:10.5.29-1.amzn2023.0.1   amazonlinux 1.5 M
+Installing dependencies:
+ mariadb-connector-c        x86_64 3.3.10-1.amzn2023.0.1      amazonlinux 211 k
+ mariadb-connector-c-config noarch 3.3.10-1.amzn2023.0.1      amazonlinux 9.9 k
+ mariadb105-common          x86_64 3:10.5.29-1.amzn2023.0.1   amazonlinux  28 k
+ perl-Sys-Hostname          x86_64 1.23-477.amzn2023.0.8      amazonlinux  17 k
+
+Transaction Summary
+================================================================================
+Install  5 Packages
+
+Total download size: 1.8 M
+Installed size: 19 M
+Downloading Packages:
+(1/5): mariadb-connector-c-config-3.3.10-1.amzn 212 kB/s | 9.9 kB     00:00    
+(2/5): mariadb-connector-c-3.3.10-1.amzn2023.0. 3.4 MB/s | 211 kB     00:00    
+(3/5): perl-Sys-Hostname-1.23-477.amzn2023.0.8. 666 kB/s |  17 kB     00:00    
+(4/5): mariadb105-10.5.29-1.amzn2023.0.1.x86_64  14 MB/s | 1.5 MB     00:00    
+(5/5): mariadb105-common-10.5.29-1.amzn2023.0.1 234 kB/s |  28 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           6.3 MB/s | 1.8 MB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : mariadb-connector-c-config-3.3.10-1.amzn2023.0.1.noa   1/5 
+  Installing       : mariadb-connector-c-3.3.10-1.amzn2023.0.1.x86_64       2/5 
+  Installing       : mariadb105-common-3:10.5.29-1.amzn2023.0.1.x86_64      3/5 
+  Installing       : perl-Sys-Hostname-1.23-477.amzn2023.0.8.x86_64         4/5 
+  Installing       : mariadb105-3:10.5.29-1.amzn2023.0.1.x86_64             5/5 
+  Running scriptlet: mariadb105-3:10.5.29-1.amzn2023.0.1.x86_64             5/5 
+  Verifying        : mariadb-connector-c-3.3.10-1.amzn2023.0.1.x86_64       1/5 
+  Verifying        : mariadb-connector-c-config-3.3.10-1.amzn2023.0.1.noa   2/5 
+  Verifying        : mariadb105-3:10.5.29-1.amzn2023.0.1.x86_64             3/5 
+  Verifying        : mariadb105-common-3:10.5.29-1.amzn2023.0.1.x86_64      4/5 
+  Verifying        : perl-Sys-Hostname-1.23-477.amzn2023.0.8.x86_64         5/5 
+
+Installed:
+  mariadb-connector-c-3.3.10-1.amzn2023.0.1.x86_64                              
+  mariadb-connector-c-config-3.3.10-1.amzn2023.0.1.noarch                       
+  mariadb105-3:10.5.29-1.amzn2023.0.1.x86_64                                    
+  mariadb105-common-3:10.5.29-1.amzn2023.0.1.x86_64                             
+  perl-Sys-Hostname-1.23-477.amzn2023.0.8.x86_64                                
+
+Complete!
+[root@ip-172-31-86-120 .ssh]# 
+
+Target 
+
+[root@ip-172-31-84-48 .ssh]# mariadb --version
+mariadb  Ver 15.1 Distrib 10.5.29-MariaDB, for Linux (x86_64) using  EditLine wrapper
+[root@ip-172-31-84-48 .ssh]# 
+
+This is common location for hosts 
+
+[root@ip-172-31-86-120 .ssh]# vi /etc/ansible/hosts
+
+
+[root@ip-172-31-86-120 .ssh]# ansible all -a "yum install mariadb105  -y" -b
+hello | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: ssh: Could not resolve hostname hello: Name or service not known",
+    "unreachable": true
+}
+heat | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: ssh: Could not resolve hostname heat: Name or service not known",
+    "unreachable": true
+}
+master | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: ssh: Could not resolve hostname master: Name or service not known",
+    "unreachable": true
+}
+miss | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: ssh: Could not resolve hostname miss: Name or service not known",
+    "unreachable": true
+}
+ayya | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: ssh: Could not resolve hostname ayya: Name or service not known",
+    "unreachable": true
+}
+[WARNING]: Platform linux on host 172.31.84.48 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.84.48 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:18:51 ago on Mon Jun  1 18:55:02 2026.
+Package mariadb105-3:10.5.29-1.amzn2023.0.1.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[root@ip-172-31-86-120 .ssh]# cat /etc/config/hosts
+cat: /etc/config/hosts: No such file or directory
+[root@ip-172-31-86-120 .ssh]# cat /etc/ansible/hosts
+172.31.84.48 
+hello
+master
+heat
+miss 
+ayya 
+[root@ip-172-31-86-120 .ssh]# 
+
+
+Developer
+   |
+   v
+Git Commit (Playbook)
+   |
+   v
+Jenkins / AWX Pipeline
+   |
+   v
+Terraform Creates Infrastructure
+   |
+   v
+Launch Template
+   |
+   v
+Auto Scaling Group (ASG)
+   |
+   v
+New EC2 Created
+(IP = 10.0.1.25)
+   |
+   v
+AWS Automatically Applies Tags
+   |
+   +--> Environment=Prod
+   +--> Application=CAPITEQ
+   +--> Team=Operations
+   |
+   v
+Dynamic Inventory Plugin (aws_ec2)
+   |
+   v
+Calls AWS DescribeInstances API
+   |
+   v
+Finds All EC2s Matching Tags
+   |
+   +--> 10.0.1.10
+   +--> 10.0.1.11
+   +--> 10.0.1.12
+   +--> 10.0.1.25 (NEW)
+   |
+   v
+Inventory Automatically Updated
+   |
+   v
+AWX / Ansible Controller
+   |
+   v
+Connect via SSH or AWS SSM
+   |
+   v
+Run Playbooks
+   |
+   +--> OS Hardening
+   +--> Java Installation
+   +--> Application Deployment
+   +--> CloudWatch Agent
+   +--> Datadog Agent
+   +--> Node Exporter
+   +--> Splunk Forwarder
+   |
+   v
+Health Check
+   |
+   v
+Register with Load Balancer
+   |
+   v
+Production Ready
+Key Interview/Real-Time Statement
+In modern cloud environments, we do not manually add new server IPs to inventory files.
+
+ASG launches new EC2 instances.
+AWS tags the instances.
+Ansible Dynamic Inventory (aws_ec2 plugin) queries AWS APIs and automatically discovers the new servers based on tags.
+AWX/Jenkins then executes playbooks against those discovered hosts via SSH or AWS SSM.
+
+So we manage Tags and Host Groups, not individual IP addresses.
+Actual Enterprise Thinking
+Old World:
+Server ---> IP ---> Add to inventory manually
+
+Modern World:
+Server ---> Tags ---> Dynamic Inventory ---> Automatic Discovery
+
+This "Tags → Dynamic Inventory → Automatic Discovery → Playbook Execution" pattern is what you will commonly see in AWS-based enterprise environments.

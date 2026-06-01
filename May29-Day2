@@ -1,0 +1,29 @@
+
+
+---Then Host Key verification put false by default it is true 
+	-- sudo vi /etc/ansible/ansible.cfg #create config file
+	--[defaults]
+	   host_key_checking = False
+
+
+
+
+(basic state's
+name = (httpd install)
+               state=latest
+               state=present
+               state=absent )
+
+ansible all -m yum -a "name=httpd state=latest" -b
+ansible all -m yum -a "name=httpd state=present" -b
+ansible all -m yum -a "name=httpd state=absent" -b
+
+(name = systemctl or service              
+               state=stopped
+               state= started
+               state=restrted)
+ansible all -m service -a "name=httpd state=started" -b      #to start service
+
+ansible all -m service -a "name=httpd state=stopped" -b       #to stop service 
+
+ansible all -m service -a "name=httpd state=restrted" -b       #to stop service 

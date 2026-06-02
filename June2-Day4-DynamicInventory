@@ -1,0 +1,698 @@
+Dynamic Inventory File Process 
+
+
+root@ip-172-31-91-253 ec2-user]# dnf install ansible -y
+Amazon Linux 2023 Kernel Livepatch repository                                                                                                                                      306 kB/s |  47 kB     00:00    
+Dependencies resolved.
+===================================================================================================================================================================================================================
+ Package                                           Architecture                                Version                                                      Repository                                        Size
+===================================================================================================================================================================================================================
+Installing:
+ ansible                                           noarch                                      8.3.0-1.amzn2023.0.2                                         amazonlinux                                       32 M
+Installing dependencies:
+ ansible-core                                      x86_64                                      2.15.3-1.amzn2023.0.11                                       amazonlinux                                      2.5 M
+ git-core                                          x86_64                                      2.50.1-1.amzn2023.0.1                                        amazonlinux                                      4.9 M
+ sshpass                                           x86_64                                      1.09-6.amzn2023.0.1                                          amazonlinux                                       28 k
+
+Transaction Summary
+===================================================================================================================================================================================================================
+Install  4 Packages
+
+Total download size: 40 M
+Installed size: 552 M
+Downloading Packages:
+(1/4): git-core-2.50.1-1.amzn2023.0.1.x86_64.rpm                                                                                                                                    43 MB/s | 4.9 MB     00:00    
+(2/4): sshpass-1.09-6.amzn2023.0.1.x86_64.rpm                                                                                                                                      1.0 MB/s |  28 kB     00:00    
+(3/4): ansible-core-2.15.3-1.amzn2023.0.11.x86_64.rpm                                                                                                                              7.4 MB/s | 2.5 MB     00:00    
+(4/4): ansible-8.3.0-1.amzn2023.0.2.noarch.rpm                                                                                                                                      59 MB/s |  32 MB     00:00    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                               67 MB/s |  40 MB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                                           1/1 
+  Installing       : sshpass-1.09-6.amzn2023.0.1.x86_64                                                                                                                                                        1/4 
+  Installing       : git-core-2.50.1-1.amzn2023.0.1.x86_64                                                                                                                                                     2/4 
+  Installing       : ansible-core-2.15.3-1.amzn2023.0.11.x86_64                                                                                                                                                3/4 
+  Installing       : ansible-8.3.0-1.amzn2023.0.2.noarch                                                                                                                                                       4/4 
+  Running scriptlet: ansible-8.3.0-1.amzn2023.0.2.noarch                                                                                                                                                       4/4 
+  Verifying        : ansible-8.3.0-1.amzn2023.0.2.noarch                                                                                                                                                       1/4 
+  Verifying        : ansible-core-2.15.3-1.amzn2023.0.11.x86_64                                                                                                                                                2/4 
+  Verifying        : git-core-2.50.1-1.amzn2023.0.1.x86_64                                                                                                                                                     3/4 
+  Verifying        : sshpass-1.09-6.amzn2023.0.1.x86_64                                                                                                                                                        4/4 
+
+Installed:
+  ansible-8.3.0-1.amzn2023.0.2.noarch               ansible-core-2.15.3-1.amzn2023.0.11.x86_64               git-core-2.50.1-1.amzn2023.0.1.x86_64               sshpass-1.09-6.amzn2023.0.1.x86_64              
+
+Complete!
+[root@ip-172-31-91-253 ec2-user]# ssh-keygen
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa
+Your public key has been saved in /root/.ssh/id_rsa.pub
+The key fingerprint is:
+SHA256:DMybph76TAhY4ACvJsvyfxYiBClHGHSyER3IS7u9X0I root@ip-172-31-91-253.ec2.internal
+The key's randomart image is:
++---[RSA 3072]----+
+|OX=o.            |
+|B**. o           |
+|o==   +          |
+|.=.    =         |
+|=oo  E+ S        |
+|++.ooo.          |
+|o...=o o         |
+|.. * .=          |
+|  oo*+           |
++----[SHA256]-----+
+[root@ip-172-31-91-253 ec2-user]# ll
+total 0
+[root@ip-172-31-91-253 ec2-user]# cd .ssh
+[root@ip-172-31-91-253 .ssh]# ll
+total 0
+-rw-------. 1 ec2-user ec2-user 0 Jun  2 15:43 authorized_keys
+[root@ip-172-31-91-253 .ssh]# pwd
+/home/ec2-user/.ssh
+[root@ip-172-31-91-253 .ssh]# cd /root
+[root@ip-172-31-91-253 ~]# cd.ssh
+bash: cd.ssh: command not found
+[root@ip-172-31-91-253 ~]# pwd
+/root
+[root@ip-172-31-91-253 ~]# ls
+[root@ip-172-31-91-253 ~]# ll
+total 0
+[root@ip-172-31-91-253 ~]# cd .ssh
+[root@ip-172-31-91-253 .ssh]# ll
+total 8
+-rw-------. 1 root root    0 Jun  2 15:43 authorized_keys
+-rw-------. 1 root root 2622 Jun  2 15:47 id_rsa
+-rw-r--r--. 1 root root  588 Jun  2 15:47 id_rsa.pub
+[root@ip-172-31-91-253 .ssh]# pwd
+/root/.ssh
+[root@ip-172-31-91-253 .ssh]# cat id_rsa.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC84pmtTE+6zMOduOm++3i7mJFfeyCfFEFNXaRLQde7ijNDLGcTVY7E3UUm10++vIF8dQI6fSeJ2CP4rphCnHZSoHqa/wZurIWyy0xmQ2gbT0+oDj8qgD3gDMiC+uN9n/qKoj+wC0GV9Xf7GY+8o0aoQqdE+xZLL/aEcIk+pzyTS7KB/EhQiJ0UusehPQluiwLaWRIjlRmTszNY2Ny3SZy6Cgio0T4ocqNxM9X3W/lYrrzyeOLNA3c/axriWD9OjC1a4UMuIH1Bs6iy9jPzjJ2tB/fRwM8quo3Y78hn5Gk/jUjgukBjPi1+LruB9bx+wtIrVsYVLCM0ETLjF4WE2CGmlBxtfRVaAL++uOwDmGhZEi+9Hk9lvdWZ2Emed44pKRV2C7v0o+WoUHYPm7fsYWs2ywERbrrfpQPQavMs0su7Ljn1R2rEDH6tVmTg6pfBYvbnUBws6oCv+qWsgTn6ZgQ2S3Rjqw00Uwb/M6pjLrnKOuv2tSqdCsXsFakO3b/x5B8= root@ip-172-31-91-253.ec2.internal
+[root@ip-172-31-91-253 .ssh]# ssh 172.31.84.57   
+The authenticity of host '172.31.84.57 (172.31.84.57)' can't be established.
+ED25519 key fingerprint is SHA256:DXj7v3bU5TbbqyXxrXWwykc6eU61o8WcrZhFr3DHPSk.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '172.31.84.57' (ED25519) to the list of known hosts.
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+Last login: Tue Jun  2 15:49:37 2026
+[root@ip-172-31-84-57 ~]# exit
+logout
+Connection to 172.31.84.57 closed.
+[root@ip-172-31-91-253 .ssh]# ssh 172.31.85.223    
+The authenticity of host '172.31.85.223 (172.31.85.223)' can't be established.
+ED25519 key fingerprint is SHA256:XeLj+u0rdl4/j6GRQIanqbHrU0XkN95M53oor1kEThc.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '172.31.85.223' (ED25519) to the list of known hosts.
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+Last login: Tue Jun  2 15:49:34 2026
+[root@ip-172-31-85-223 ~]# exit
+logout
+Connection to 172.31.85.223 closed.
+[root@ip-172-31-91-253 .ssh]# yum install python3 -y
+Last metadata expiration check: 0:04:58 ago on Tue Jun  2 15:46:08 2026.
+Package python3-3.9.25-1.amzn2023.0.5.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+[root@ip-172-31-91-253 .ssh]# pip install boto3
+bash: pip: command not found
+[root@ip-172-31-91-253 .ssh]# yum install pip -y
+Last metadata expiration check: 0:05:37 ago on Tue Jun  2 15:46:08 2026.
+Dependencies resolved.
+===================================================================================================================================================================================================================
+ Package                                              Architecture                               Version                                                     Repository                                       Size
+===================================================================================================================================================================================================================
+Installing:
+ python3-pip                                          noarch                                     21.3.1-2.amzn2023.0.19                                      amazonlinux                                     1.8 M
+Installing weak dependencies:
+ libxcrypt-compat                                     x86_64                                     4.4.33-7.amzn2023                                           amazonlinux                                      92 k
+
+Transaction Summary
+===================================================================================================================================================================================================================
+Install  2 Packages
+
+Total download size: 1.9 M
+Installed size: 11 M
+Downloading Packages:
+(1/2): libxcrypt-compat-4.4.33-7.amzn2023.x86_64.rpm                                                                                                                               1.8 MB/s |  92 kB     00:00    
+(2/2): python3-pip-21.3.1-2.amzn2023.0.19.noarch.rpm                                                                                                                                15 MB/s | 1.8 MB     00:00    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                               12 MB/s | 1.9 MB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                                           1/1 
+  Installing       : libxcrypt-compat-4.4.33-7.amzn2023.x86_64                                                                                                                                                 1/2 
+  Installing       : python3-pip-21.3.1-2.amzn2023.0.19.noarch                                                                                                                                                 2/2 
+  Running scriptlet: python3-pip-21.3.1-2.amzn2023.0.19.noarch                                                                                                                                                 2/2 
+  Verifying        : libxcrypt-compat-4.4.33-7.amzn2023.x86_64                                                                                                                                                 1/2 
+  Verifying        : python3-pip-21.3.1-2.amzn2023.0.19.noarch                                                                                                                                                 2/2 
+
+Installed:
+  libxcrypt-compat-4.4.33-7.amzn2023.x86_64                                                                python3-pip-21.3.1-2.amzn2023.0.19.noarch                                                               
+
+Complete!
+[root@ip-172-31-91-253 .ssh]# pip install boto3
+Collecting boto3
+  Downloading boto3-1.42.97-py3-none-any.whl (140 kB)
+     |████████████████████████████████| 140 kB 16.8 MB/s            
+Collecting s3transfer<0.17.0,>=0.16.0
+  Downloading s3transfer-0.16.1-py3-none-any.whl (86 kB)
+     |████████████████████████████████| 86 kB 9.9 MB/s             
+Collecting botocore<1.43.0,>=1.42.97
+  Downloading botocore-1.42.97-py3-none-any.whl (15.0 MB)
+     |████████████████████████████████| 15.0 MB 53.5 MB/s            
+Requirement already satisfied: jmespath<2.0.0,>=0.7.1 in /usr/lib/python3.9/site-packages (from boto3) (0.10.0)
+Requirement already satisfied: python-dateutil<3.0.0,>=2.1 in /usr/lib/python3.9/site-packages (from botocore<1.43.0,>=1.42.97->boto3) (2.8.1)
+Requirement already satisfied: urllib3<1.27,>=1.25.4 in /usr/lib/python3.9/site-packages (from botocore<1.43.0,>=1.42.97->boto3) (1.25.10)
+Requirement already satisfied: six>=1.5 in /usr/lib/python3.9/site-packages (from python-dateutil<3.0.0,>=2.1->botocore<1.43.0,>=1.42.97->boto3) (1.15.0)
+Installing collected packages: botocore, s3transfer, boto3
+Successfully installed boto3-1.42.97 botocore-1.42.97 s3transfer-0.16.1
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+[root@ip-172-31-91-253 .ssh]# ansible-galaxy collection install amazon.aws
+Starting galaxy collection install process
+Nothing to do. All requested collections are already installed. If you want to reinstall them, consider using `--force`.
+[root@ip-172-31-91-253 .ssh]# 
+
+
+
+while working in laptop you need to install  ---  ansible-galaxy collection install amazon.aws
+
+
+ec2 admin role should be atatched before below 
+
+
+root@ip-172-31-91-253 ansible]# ansible all -m ping
+[WARNING]: Platform linux on host ec2-13-223-58-150.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change
+the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ec2-13-223-58-150.compute-1.amazonaws.com | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host ec2-54-210-205-160.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change
+the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ec2-54-210-205-160.compute-1.amazonaws.com | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[root@ip-172-31-91-253 ansible]# pwd
+/etc/ansible
+[root@ip-172-31-91-253 ansible]# ll
+total 8
+-rw-r--r--. 1 root root 98 Jun  2 16:07 ansible.cfg
+-rw-r--r--. 1 root root 84 Jun  2 16:03 aws_ec2.yml
+drwxr-xr-x. 2 root root  6 Mar 24  2025 roles
+[root@ip-172-31-91-253 ansible]# cat ansible.cfg 
+[defaults]
+enable_plugins = amazon.aws.aws_ec2
+inventory=./aws_ec2.yml
+host_key_checking = False
+
+[root@ip-172-31-91-253 ansible]# cat aws_ec2.yml 
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+
+filters:
+  tag:Name:
+    - "dev"
+[root@ip-172-31-91-253 ansible]# 
+
+==============================================
+
+
+Also i created image from dev instance and lauinched instance before it was only 2 dev instances 
+and i launched one more from launch instance and checking further
+
+[root@ip-172-31-91-253 ansible]# cat playbook.yml 
+---
+- name: first playbook
+  hosts: all
+  become: yes
+  tasks:
+    - name: install httpd software
+      yum:
+        name: httpd
+        state: latest
+    - name: start web server
+      service:
+        name: httpd
+        state: started
+[root@ip-172-31-91-253 ansible]# ansible-playbook playbook.yml 
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host ec2-13-223-58-150.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change
+the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [ec2-13-223-58-150.compute-1.amazonaws.com]
+[WARNING]: Platform linux on host ec2-23-20-85-52.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the
+meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [ec2-23-20-85-52.compute-1.amazonaws.com]
+[WARNING]: Platform linux on host ec2-54-210-205-160.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change
+the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [ec2-54-210-205-160.compute-1.amazonaws.com]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+changed: [ec2-54-210-205-160.compute-1.amazonaws.com]
+changed: [ec2-13-223-58-150.compute-1.amazonaws.com]
+changed: [ec2-23-20-85-52.compute-1.amazonaws.com]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+changed: [ec2-54-210-205-160.compute-1.amazonaws.com]
+changed: [ec2-13-223-58-150.compute-1.amazonaws.com]
+changed: [ec2-23-20-85-52.compute-1.amazonaws.com]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+ec2-13-223-58-150.compute-1.amazonaws.com : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ec2-23-20-85-52.compute-1.amazonaws.com : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ec2-54-210-205-160.compute-1.amazonaws.com : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[root@ip-172-31-91-253 ansible]# 
+
+
+It worked as well 
+
+
+root@ip-172-31-91-253 ansible]# ansible-inventory -i aws_ec2.yml --graph
+@all:
+  |--@ungrouped:
+  |--@aws_ec2:
+  |  |--ec2-54-210-205-160.compute-1.amazonaws.com
+  |  |--ec2-13-223-58-150.compute-1.amazonaws.com
+  |  |--ec2-23-20-85-52.compute-1.amazonaws.com
+
+
+Groups one not undestood need to check once after verra provide document
+
+==========================================================
+                    Ansibel Roles
+==========================================================
+
+ansible-galaxy init <rolename>
+
+ex: ansible-galaxy init test
+Ansible Roles provide a structured way to organize tasks, templates, files, and variables. This structure makes it easier to manage complex automation setups, as everything related to a specific role is contained within its directory
+
+For reference :
+
+https://github.com/nareshdevopscloud/devops-ansible/tree/main/roles/first_role
+
+
+
+
+[root@ip-172-31-91-253 ansible]# 
+ansible-galaxy init project-1
+- Role project-1 was created successfully
+[root@ip-172-31-91-253 ansible]# ll
+total 12
+-rw-r--r--.  1 root root  98 Jun  2 16:07 ansible.cfg
+-rw-r--r--.  1 root root  84 Jun  2 16:03 aws_ec2.yml
+-rw-r--r--.  1 root root 238 Jun  2 16:11 playbook.yml
+drwxr-xr-x. 10 root root 135 Jun  2 16:30 project-1
+drwxr-xr-x.  2 root root   6 Mar 24  2025 roles
+[root@ip-172-31-91-253 ansible]# yum install tree -y
+Last metadata expiration check: 0:44:16 ago on Tue Jun  2 15:46:08 2026.
+Dependencies resolved.
+===================================================================================================================================================================================================================
+ Package                                     Architecture                                  Version                                                        Repository                                          Size
+===================================================================================================================================================================================================================
+Installing:
+ tree                                        x86_64                                        1.8.0-6.amzn2023.0.2                                           amazonlinux                                         56 k
+
+Transaction Summary
+===================================================================================================================================================================================================================
+Install  1 Package
+
+Total download size: 56 k
+Installed size: 113 k
+Downloading Packages:
+tree-1.8.0-6.amzn2023.0.2.x86_64.rpm                                                                                                                                               767 kB/s |  56 kB     00:00    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                              480 kB/s |  56 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                                           1/1 
+  Installing       : tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                          1/1 
+  Running scriptlet: tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                          1/1 
+  Verifying        : tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                          1/1 
+
+Installed:
+  tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                                                 
+
+Complete!
+[root@ip-172-31-91-253 ansible]# tree 
+.
+├── ansible.cfg
+├── aws_ec2.yml
+├── playbook.yml
+├── project-1
+│   ├── README.md
+│   ├── defaults
+│   │   └── main.yml
+│   ├── files
+│   ├── handlers
+│   │   └── main.yml
+│   ├── meta
+│   │   └── main.yml
+│   ├── tasks
+│   │   └── main.yml
+│   ├── templates
+│   ├── tests
+│   │   ├── inventory
+│   │   └── test.yml
+│   └── vars
+│       └── main.yml
+└── roles
+
+10 directories, 11 files
+[root@ip-172-31-91-253 ansible]# 
+
+[root@ip-172-31-91-253 ansible]# 
+ansible-galaxy init project-1
+- Role project-1 was created successfully
+[root@ip-172-31-91-253 ansible]# ll
+total 12
+-rw-r--r--.  1 root root  98 Jun  2 16:07 ansible.cfg
+-rw-r--r--.  1 root root  84 Jun  2 16:03 aws_ec2.yml
+-rw-r--r--.  1 root root 238 Jun  2 16:11 playbook.yml
+drwxr-xr-x. 10 root root 135 Jun  2 16:30 project-1
+drwxr-xr-x.  2 root root   6 Mar 24  2025 roles
+[root@ip-172-31-91-253 ansible]# yum install tree -y
+Last metadata expiration check: 0:44:16 ago on Tue Jun  2 15:46:08 2026.
+Dependencies resolved.
+===================================================================================================================================================================================================================
+ Package                                     Architecture                                  Version                                                        Repository                                          Size
+===================================================================================================================================================================================================================
+Installing:
+ tree                                        x86_64                                        1.8.0-6.amzn2023.0.2                                           amazonlinux                                         56 k
+
+Transaction Summary
+===================================================================================================================================================================================================================
+Install  1 Package
+
+Total download size: 56 k
+Installed size: 113 k
+Downloading Packages:
+tree-1.8.0-6.amzn2023.0.2.x86_64.rpm                                                                                                                                               767 kB/s |  56 kB     00:00    
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                                                                              480 kB/s |  56 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                                                                           1/1 
+  Installing       : tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                          1/1 
+  Running scriptlet: tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                          1/1 
+  Verifying        : tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                          1/1 
+
+Installed:
+  tree-1.8.0-6.amzn2023.0.2.x86_64                                                                                                                                                                                 
+
+Complete!
+[root@ip-172-31-91-253 ansible]# tree 
+.
+├── ansible.cfg
+├── aws_ec2.yml
+├── playbook.yml
+├── project-1
+│   ├── README.md
+│   ├── defaults
+│   │   └── main.yml
+│   ├── files
+│   ├── handlers
+│   │   └── main.yml
+│   ├── meta
+│   │   └── main.yml
+│   ├── tasks
+│   │   └── main.yml
+│   ├── templates
+│   ├── tests
+│   │   ├── inventory
+│   │   └── test.yml
+│   └── vars
+│       └── main.yml
+└── roles
+
+10 directories, 11 files
+
+
+https://github.com/mluticloud730am/devops-ansible-final/  -- taken below yml in below 
+
+
+[root@ip-172-31-91-253 ansible]# cd project-1/
+[root@ip-172-31-91-253 project-1]# cd fie
+bash: cd: fie: No such file or directory
+[root@ip-172-31-91-253 project-1]# cd files/
+[root@ip-172-31-91-253 files]# ll
+total 0
+[root@ip-172-31-91-253 files]# vi index.html
+[root@ip-172-31-91-253 files]# cd ../
+[root@ip-172-31-91-253 project-1]# cd templates/
+[root@ip-172-31-91-253 templates]# cd ../
+[root@ip-172-31-91-253 project-1]# cd tasks/
+[root@ip-172-31-91-253 tasks]# ll
+total 4
+-rw-r--r--. 1 root root 31 Jun  2 16:30 main.yml
+[root@ip-172-31-91-253 tasks]# vi child_copy.yaml
+[root@ip-172-31-91-253 tasks]# vi child_install.yaml
+[root@ip-172-31-91-253 tasks]# vi child_start.yaml
+[root@ip-172-31-91-253 tasks]# cd ..
+[root@ip-172-31-91-253 project-1]# ll
+total 4
+-rw-r--r--. 1 root root 1328 Jun  2 16:30 README.md
+drwxr-xr-x. 2 root root   22 Jun  2 16:30 defaults
+drwxr-xr-x. 2 root root   24 Jun  2 16:31 files
+drwxr-xr-x. 2 root root   22 Jun  2 16:30 handlers
+drwxr-xr-x. 2 root root   22 Jun  2 16:30 meta
+drwxr-xr-x. 2 root root   95 Jun  2 16:34 tasks
+drwxr-xr-x. 2 root root    6 Jun  2 16:30 templates
+drwxr-xr-x. 2 root root   39 Jun  2 16:30 tests
+drwxr-xr-x. 2 root root   22 Jun  2 16:30 vars
+[root@ip-172-31-91-253 project-1]# cd handlers/
+[root@ip-172-31-91-253 handlers]# ll
+total 4
+-rw-r--r--. 1 root root 34 Jun  2 16:30 main.yml
+[root@ip-172-31-91-253 handlers]# cat main.yml 
+---
+# handlers file for project-1
+[root@ip-172-31-91-253 handlers]# vi main.yml 
+[root@ip-172-31-91-253 handlers]# tree
+.
+└── main.yml
+
+0 directories, 1 file
+[root@ip-172-31-91-253 handlers]# cd ..
+[root@ip-172-31-91-253 project-1]# ll
+total 4
+-rw-r--r--. 1 root root 1328 Jun  2 16:30 README.md
+drwxr-xr-x. 2 root root   22 Jun  2 16:30 defaults
+drwxr-xr-x. 2 root root   24 Jun  2 16:31 files
+drwxr-xr-x. 2 root root   22 Jun  2 16:34 handlers
+drwxr-xr-x. 2 root root   22 Jun  2 16:30 meta
+drwxr-xr-x. 2 root root   95 Jun  2 16:34 tasks
+drwxr-xr-x. 2 root root    6 Jun  2 16:30 templates
+drwxr-xr-x. 2 root root   39 Jun  2 16:30 tests
+drwxr-xr-x. 2 root root   22 Jun  2 16:30 vars
+[root@ip-172-31-91-253 project-1]# cd handlers/
+[root@ip-172-31-91-253 handlers]# vi main.yml 
+[root@ip-172-31-91-253 handlers]# cd ../tasks/
+[root@ip-172-31-91-253 tasks]# vi main.yml 
+[root@ip-172-31-91-253 tasks]# pwd 
+/etc/ansible/project-1/tasks
+[root@ip-172-31-91-253 tasks]# cd ../../
+[root@ip-172-31-91-253 ansible]# ls
+ansible.cfg  aws_ec2.yml  playbook.yml  project-1  roles
+[root@ip-172-31-91-253 ansible]# ll
+total 12
+-rw-r--r--.  1 root root  98 Jun  2 16:07 ansible.cfg
+-rw-r--r--.  1 root root  84 Jun  2 16:03 aws_ec2.yml
+-rw-r--r--.  1 root root 238 Jun  2 16:11 playbook.yml
+drwxr-xr-x. 10 root root 135 Jun  2 16:30 project-1
+drwxr-xr-x.  2 root root   6 Mar 24  2025 roles
+[root@ip-172-31-91-253 ansible]# vi role.yml
+[root@ip-172-31-91-253 ansible]# vi role.yml
+[root@ip-172-31-91-253 ansible]# ansible-playbook role.yaml
+ERROR! the playbook: role.yaml could not be found
+[root@ip-172-31-91-253 ansible]# ansible-playbook role.yml
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host ec2-54-210-205-160.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change
+the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [ec2-54-210-205-160.compute-1.amazonaws.com]
+[WARNING]: Platform linux on host ec2-23-20-85-52.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the
+meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [ec2-23-20-85-52.compute-1.amazonaws.com]
+[WARNING]: Platform linux on host ec2-13-223-58-150.compute-1.amazonaws.com is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change
+the meaning of that path. See https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [ec2-13-223-58-150.compute-1.amazonaws.com]
+
+TASK [project-1 : call child playbook] ****************************************************************************************************************************************************************************
+included: /etc/ansible/project-1/tasks/child_install.yaml for ec2-54-210-205-160.compute-1.amazonaws.com, ec2-13-223-58-150.compute-1.amazonaws.com, ec2-23-20-85-52.compute-1.amazonaws.com => (item=child_install.yaml)
+included: /etc/ansible/project-1/tasks/child_start.yaml for ec2-54-210-205-160.compute-1.amazonaws.com, ec2-13-223-58-150.compute-1.amazonaws.com, ec2-23-20-85-52.compute-1.amazonaws.com => (item=child_start.yaml)
+included: /etc/ansible/project-1/tasks/child_copy.yaml for ec2-54-210-205-160.compute-1.amazonaws.com, ec2-13-223-58-150.compute-1.amazonaws.com, ec2-23-20-85-52.compute-1.amazonaws.com => (item=child_copy.yaml)
+
+TASK [project-1 : install with with include module] ***************************************************************************************************************************************************************
+ok: [ec2-23-20-85-52.compute-1.amazonaws.com]
+ok: [ec2-13-223-58-150.compute-1.amazonaws.com]
+ok: [ec2-54-210-205-160.compute-1.amazonaws.com]
+
+TASK [project-1 : start web server] *******************************************************************************************************************************************************************************
+ok: [ec2-54-210-205-160.compute-1.amazonaws.com]
+ok: [ec2-13-223-58-150.compute-1.amazonaws.com]
+ok: [ec2-23-20-85-52.compute-1.amazonaws.com]
+
+TASK [project-1 : copying the files] ******************************************************************************************************************************************************************************
+changed: [ec2-54-210-205-160.compute-1.amazonaws.com]
+changed: [ec2-23-20-85-52.compute-1.amazonaws.com]
+changed: [ec2-13-223-58-150.compute-1.amazonaws.com]
+
+RUNNING HANDLER [project-1 : Restart web serve] *******************************************************************************************************************************************************************
+changed: [ec2-54-210-205-160.compute-1.amazonaws.com]
+changed: [ec2-23-20-85-52.compute-1.amazonaws.com]
+changed: [ec2-13-223-58-150.compute-1.amazonaws.com]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+ec2-13-223-58-150.compute-1.amazonaws.com : ok=8    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ec2-23-20-85-52.compute-1.amazonaws.com : ok=8    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ec2-54-210-205-160.compute-1.amazonaws.com : ok=8    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[root@ip-172-31-91-253 ansible]# 
+
+
+
+http://13.223.58.150/
+
+hello
+
+
+Good question — this confuses most people when they start Ansible AWS dynamic inventory.
+
+Let’s break it simply.
+
+🧠 Why Python3 is required?
+
+Ansible itself is written in Python.
+
+When you use AWS dynamic inventory like:
+
+plugin: amazon.aws.aws_ec2
+
+👉 Ansible internally runs a Python plugin to:
+
+connect to AWS
+fetch EC2 instances
+apply filters (tags, regions, etc.)
+
+So Python3 is required because:
+
+Ansible executes inventory plugins using Python runtime
+Without Python → plugin cannot run
+☁️ Why boto3 is required?
+
+👉 boto3 is the AWS SDK for Python
+
+It allows Python (and Ansible) to talk to AWS APIs.
+
+So when Ansible runs dynamic inventory, it does:
+
+Ansible plugin → Python → boto3 → AWS API → EC2 data
+🔥 Simple flow
+Ansible
+   ↓
+aws_ec2 plugin (Python code)
+   ↓
+boto3 library
+   ↓
+AWS API (EC2, tags, regions)
+   ↓
+Returns list of instances
+🧠 Real-world analogy
+
+Think like this:
+
+Component	Role
+Ansible	Manager
+Python	Language used by manager
+boto3	AWS translator
+AWS	Data source (EC2 instances)
+
+👉 Without boto3 → Python cannot talk to AWS
+👉 Without Python → Ansible plugin cannot run
+
+📦 What happens if boto3 is missing?
+
+You’ll see errors like:
+
+botocore.exceptions.NoModuleError: No module named boto3
+
+or
+
+ImportError: boto3 not found
+
+👉 Meaning: “I don’t know how to connect to AWS”
+
+⚙️ Why Ansible doesn’t do AWS calls directly?
+
+Because:
+
+AWS APIs are complex
+Authentication, signing requests is hard
+boto3 already solves this
+
+So Ansible reuses boto3 instead of reinventing AWS integration
+
+🧪 Installation
+
+Usually required:
+
+pip install boto3 botocore
+
+or
+
+pip3 install boto3
+🎯 Final simple answer
+
+👉 Python3 is required because Ansible AWS plugins run in Python
+👉 boto3 is required because it is the library that actually talks to AWS APIs
+

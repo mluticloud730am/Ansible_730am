@@ -1,0 +1,2075 @@
+
+
+---Then Host Key verification put false by default it is true 
+	-- sudo vi /etc/ansible/ansible.cfg #create config file
+	--[defaults]
+	   host_key_checking = False
+
+
+
+
+(basic state's
+name = (httpd install)
+               state=latest
+               state=present
+               state=absent )
+
+ansible all -m yum -a "name=httpd state=latest" -b
+ansible all -m yum -a "name=httpd state=present" -b
+ansible all -m yum -a "name=httpd state=absent" -b
+
+(name = systemctl or service              
+               state=stopped
+               state= started
+               state=restrted)
+ansible all -m service -a "name=httpd state=started" -b      #to start service
+
+ansible all -m service -a "name=httpd state=stopped" -b       #to stop service 
+
+ansible all -m service -a "name=httpd state=restrted" -b       #to stop service 
+ec2-user@ip-172-31-31-72 .ssh]$ ansible all -m ping 
+The authenticity of host '172.31.19.177 (172.31.19.177)' can't be established.
+ED25519 key fingerprint is SHA256:rQ+yTHAi37gtp8uBFxvbApTpYduSxjYGMwsVBYgbH+8.
+This key is not known by any other names
+The authenticity of host '172.31.19.227 (172.31.19.227)' can't be established.
+ED25519 key fingerprint is SHA256:2/iYcZsoZIdqtPytQXNeUYCVfyqheTZbNhZvO9R7GYM.
+This key is not known by any other names
+The authenticity of host '172.31.20.209 (172.31.20.209)' can't be established.
+ED25519 key fingerprint is SHA256:QsZYZxUxOmNQqxc6bbdIt5ffXCUV1URaaChRKwDrqGM.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.177 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+
+172.31.19.227 | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: Host key verification failed.",
+    "unreachable": true
+}
+
+172.31.20.209 | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: Host key verification failed.",
+    "unreachable": true
+}
+[ec2-user@ip-172-31-31-72 .ssh]$ sudo cat /etc/ansible/hosts
+172.31.20.209
+172.31.19.177
+172.31.19.227
+
+what is issue with other 2 server which i am unable to connect
+
+The issue is SSH host key verification, not Ansible itself.
+
+From your output:
+
+172.31.19.177 | SUCCESS => pong
+
+This server is working because its SSH host key was accepted and stored in:
+
+~/.ssh/known_hosts
+
+But for the other two servers:
+
+172.31.19.227 | UNREACHABLE!
+Failed to connect to the host via ssh: Host key verification failed.
+
+172.31.20.209 | UNREACHABLE!
+Failed to connect to the host via ssh: Host key verification failed.
+
+This usually happens when:
+
+The EC2 instance was terminated and recreated with the same IP.
+The host key changed.
+An old entry exists in ~/.ssh/known_hosts.
+Verify manually
+
+Check known_hosts:
+
+cat ~/.ssh/known_hosts
+
+Search for those IPs:
+
+ssh-keygen -F 172.31.19.227
+ssh-keygen -F 172.31.20.209
+Remove old fingerprints
+ssh-keygen -R 172.31.19.227
+ssh-keygen -R 172.31.20.209
+
+Example output:
+
+# Host 172.31.19.227 found: line 5
+/home/ec2-user/.ssh/known_hosts updated.
+Test SSH
+ssh ec2-user@172.31.19.227
+
+and
+
+ssh ec2-user@172.31.20.209
+
+You should see:
+
+The authenticity of host '172.31.19.227' can't be established.
+Are you sure you want to continue connecting (yes/no)?
+
+Type:
+
+yes
+
+This adds the new fingerprint to known_hosts.
+
+Run Ansible again
+ansible all -m ping
+
+Expected:
+
+172.31.19.177 | SUCCESS => pong
+172.31.19.227 | SUCCESS => pong
+172.31.20.209 | SUCCESS => pong
+Quick enterprise workaround
+
+Many labs use:
+
+[defaults]
+host_key_checking = False
+
+in:
+
+/etc/ansible/ansible.cfg
+
+or
+
+[ssh_connection]
+ssh_args = -o StrictHostKeyChecking=no
+
+Then Ansible automatically accepts new host keys.
+
+Check your SSH connectivity manually first:
+
+ssh ec2-user@172.31.19.227
+ssh ec2-user@172.31.20.209
+
+and share the output. That will tell us whether the problem is only host key verification or if there is also a key-pair, security group, or user-access issue.
+
+ec2-user@ip-172-31-31-72 .ssh]$ ansible all -m ping 
+The authenticity of host '172.31.19.177 (172.31.19.177)' can't be established.
+ED25519 key fingerprint is SHA256:rQ+yTHAi37gtp8uBFxvbApTpYduSxjYGMwsVBYgbH+8.
+This key is not known by any other names
+The authenticity of host '172.31.19.227 (172.31.19.227)' can't be established.
+ED25519 key fingerprint is SHA256:2/iYcZsoZIdqtPytQXNeUYCVfyqheTZbNhZvO9R7GYM.
+This key is not known by any other names
+The authenticity of host '172.31.20.209 (172.31.20.209)' can't be established.
+ED25519 key fingerprint is SHA256:QsZYZxUxOmNQqxc6bbdIt5ffXCUV1URaaChRKwDrqGM.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.177 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+
+172.31.19.227 | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: Host key verification failed.",
+    "unreachable": true
+}
+
+172.31.20.209 | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: Host key verification failed.",
+    "unreachable": true
+}
+[ec2-user@ip-172-31-31-72 .ssh]$ sudo cat /etc/ansible/hosts
+172.31.20.209
+172.31.19.177
+172.31.19.227
+[ec2-user@ip-172-31-31-72 .ssh]$ cat ~/.ssh/known_hosts
+172.31.19.177 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINH9Rvtzva1H9/g6Jd8M+gnVPLIICY31HT6yh2yKgPEi
+172.31.19.177 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBH8nJomGqz1YQ/tWJT7gWW2t+CJv8sFSoXz2iLrpuKGYYnir8hLuKMxZQN4OQjzEiCgZJV6REZd7ixuF4Q2JC7M=
+[ec2-user@ip-172-31-31-72 .ssh]$ ssh 172.31.20.209
+The authenticity of host '172.31.20.209 (172.31.20.209)' can't be established.
+ED25519 key fingerprint is SHA256:QsZYZxUxOmNQqxc6bbdIt5ffXCUV1URaaChRKwDrqGM.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '172.31.20.209' (ED25519) to the list of known hosts.
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+Last login: Tue Jun  2 05:56:53 2026 from 18.206.107.28
+[ec2-user@ip-172-31-20-209 ~]$ exit
+logout
+Connection to 172.31.20.209 closed.
+[ec2-user@ip-172-31-31-72 .ssh]$ ssh 172.31.19.227
+The authenticity of host '172.31.19.227 (172.31.19.227)' can't be established.
+ED25519 key fingerprint is SHA256:2/iYcZsoZIdqtPytQXNeUYCVfyqheTZbNhZvO9R7GYM.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '172.31.19.227' (ED25519) to the list of known hosts.
+   ,     #_
+   ~\_  ####_        Amazon Linux 2023
+  ~~  \_#####\
+  ~~     \###|
+  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+   ~~       V~' '->
+    ~~~         /
+      ~~._.   _/
+         _/ _/
+       _/m/'
+Last login: Tue Jun  2 06:02:37 2026 from 18.206.107.29
+[ec2-user@ip-172-31-19-227 ~]$ exit
+logout
+Connection to 172.31.19.227 closed.
+[ec2-user@ip-172-31-31-72 .ssh]$ ansible all -m ping 
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.177 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.20.209 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.227 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+
+why exactly it is bhaving like this ?
+
+This is actually a very important SSH concept that every DevOps/Cloud engineer encounters.
+
+What happened?
+
+When Ansible first tried connecting to the servers:
+
+ansible all -m ping
+
+SSH saw these hosts for the first time:
+
+172.31.19.177
+172.31.19.227
+172.31.20.209
+
+and asked:
+
+The authenticity of host can't be established.
+Are you sure you want to continue connecting?
+
+You typed:
+
+yes
+
+However, Ansible was opening multiple SSH connections in parallel.
+
+Think of it like:
+
+SSH Session 1 -> 172.31.19.177
+SSH Session 2 -> 172.31.19.227
+SSH Session 3 -> 172.31.20.209
+
+When you typed "yes", one connection completed successfully and stored its fingerprint in:
+
+~/.ssh/known_hosts
+
+At that moment only:
+
+172.31.19.177
+
+was added.
+
+You confirmed this:
+
+cat ~/.ssh/known_hosts
+
+Output showed only:
+
+172.31.19.177 ssh-ed25519 ....
+172.31.19.177 ecdsa-sha2-nistp256 ....
+
+No entries existed for:
+
+172.31.19.227
+172.31.20.209
+
+So Ansible failed on those hosts with:
+
+Host key verification failed
+Why did manual SSH fix it?
+
+When you ran:
+
+ssh 172.31.20.209
+
+SSH asked:
+
+Are you sure you want to continue connecting?
+
+You typed:
+
+yes
+
+Then SSH stored:
+
+172.31.20.209
+
+inside:
+
+~/.ssh/known_hosts
+
+Similarly for:
+
+ssh 172.31.19.227
+
+Now all 3 fingerprints existed in known_hosts.
+
+What SSH is protecting you from
+
+Suppose yesterday:
+
+172.31.20.209 = Server A
+
+Today someone destroys Server A and launches:
+
+172.31.20.209 = Server B
+
+with the same IP but a different SSH key.
+
+Without verification, SSH would blindly trust the new machine.
+
+With host key checking, SSH says:
+
+Wait...
+The machine at this IP is presenting a different identity.
+Are you sure?
+
+This prevents:
+
+Man-in-the-middle attacks
+DNS spoofing
+Connecting to the wrong server
+Accidental access to a recreated EC2 instance
+How enterprises handle this
+
+For lab environments:
+
+host_key_checking = False
+
+in:
+
+/etc/ansible/ansible.cfg
+
+Then Ansible auto-accepts fingerprints.
+
+For production:
+
+Host keys are preloaded.
+SSH certificates are used.
+Host key checking remains enabled.
+About the Python warning
+Platform linux on host ... is using the discovered Python interpreter at /usr/bin/python3.9
+
+This is only a warning.
+
+Ansible detected:
+
+/usr/bin/python3.9
+
+on the remote hosts and used it.
+
+The ping succeeded:
+
+"ping": "pong"
+
+so there is no problem.
+
+Real-time interview question
+
+If an interviewer asks:
+
+"Why did Ansible show Host key verification failed?"
+
+A strong answer is:
+
+"Ansible uses SSH underneath. The target servers' SSH fingerprints were not present in the control node's ~/.ssh/known_hosts file. SSH host key verification blocked the connection. After manually accepting the host keys, Ansible was able to connect successfully."
+
+That's exactly what happened in your case.
+
+
+[ec2-user@ip-172-31-31-72 .ssh]$ ansible --version
+ansible [core 2.15.3]
+  config file = None
+  configured module search path = ['/home/ec2-user/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/lib/python3.9/site-packages/ansible
+  ansible collection location = /home/ec2-user/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/bin/ansible
+  python version = 3.9.25 (main, Apr 17 2026, 00:00:00) [GCC 11.5.0 20240719 (Red Hat 11.5.0-5)] (/usr/bin/python3.9)
+  jinja version = 3.1.4
+  libyaml = True
+
+
+
+[ec2-user@ip-172-31-31-72 .ssh]$ ansible all -a "yum update -y" -b
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.20.209 | CHANGED | rc=0 >>
+Amazon Linux 2023 Kernel Livepatch repository   321 kB/s |  47 kB     00:00    
+Dependencies resolved.
+Nothing to do.
+Complete!
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.177 | CHANGED | rc=0 >>
+Amazon Linux 2023 Kernel Livepatch repository   280 kB/s |  47 kB     00:00    
+Dependencies resolved.
+Nothing to do.
+Complete!
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.227 | CHANGED | rc=0 >>
+Amazon Linux 2023 Kernel Livepatch repository   300 kB/s |  47 kB     00:00    
+Dependencies resolved.
+Nothing to do.
+Complete!
+
+
+=========================
+
+
+ec2-user@ip-172-31-31-72 .ssh]$ ansible all -a "yum install tree -y" -b
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.20.209 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:00:52 ago on Tue Jun  2 06:17:24 2026.
+Dependencies resolved.
+================================================================================
+ Package     Architecture  Version                     Repository          Size
+================================================================================
+Installing:
+ tree        x86_64        1.8.0-6.amzn2023.0.2        amazonlinux         56 k
+
+Transaction Summary
+================================================================================
+Install  1 Package
+
+Total download size: 56 k
+Installed size: 113 k
+Downloading Packages:
+tree-1.8.0-6.amzn2023.0.2.x86_64.rpm            855 kB/s |  56 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           493 kB/s |  56 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Running scriptlet: tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Verifying        : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+
+Installed:
+  tree-1.8.0-6.amzn2023.0.2.x86_64                                              
+
+Complete!
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.177 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:00:52 ago on Tue Jun  2 06:17:24 2026.
+Dependencies resolved.
+================================================================================
+ Package     Architecture  Version                     Repository          Size
+================================================================================
+Installing:
+ tree        x86_64        1.8.0-6.amzn2023.0.2        amazonlinux         56 k
+
+Transaction Summary
+================================================================================
+Install  1 Package
+
+Total download size: 56 k
+Installed size: 113 k
+Downloading Packages:
+tree-1.8.0-6.amzn2023.0.2.x86_64.rpm            1.3 MB/s |  56 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           628 kB/s |  56 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Running scriptlet: tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Verifying        : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+
+Installed:
+  tree-1.8.0-6.amzn2023.0.2.x86_64                                              
+
+Complete!
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.227 | CHANGED | rc=0 >>
+Last metadata expiration check: 0:00:52 ago on Tue Jun  2 06:17:24 2026.
+Dependencies resolved.
+================================================================================
+ Package     Architecture  Version                     Repository          Size
+================================================================================
+Installing:
+ tree        x86_64        1.8.0-6.amzn2023.0.2        amazonlinux         56 k
+
+Transaction Summary
+================================================================================
+Install  1 Package
+
+Total download size: 56 k
+Installed size: 113 k
+Downloading Packages:
+tree-1.8.0-6.amzn2023.0.2.x86_64.rpm            1.2 MB/s |  56 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                           589 kB/s |  56 kB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Running scriptlet: tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+  Verifying        : tree-1.8.0-6.amzn2023.0.2.x86_64                       1/1 
+
+Installed:
+  tree-1.8.0-6.amzn2023.0.2.x86_64                                              
+
+Complete!
+[ec2-user@ip-172-31-31-72 .ssh]$ 
+
+
+==========================
+
+[ec2-user@ip-172-31-31-72 .ssh]$ sudo cat /etc/ansible/ansible.cfg
+[defaults]
+host_key_checking = False
+
+
+this will ignore checking host keys 
+
+======================================
+
+
+[ec2-user@ip-172-31-31-72 .ssh]$ ansible all -m copy -a "src=file1  dest=~"
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.177 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": true,
+    "checksum": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "dest": "/home/ec2-user/file1",
+    "gid": 1000,
+    "group": "ec2-user",
+    "md5sum": "d41d8cd98f00b204e9800998ecf8427e",
+    "mode": "0664",
+    "owner": "ec2-user",
+    "secontext": "unconfined_u:object_r:user_home_t:s0",
+    "size": 0,
+    "src": "/home/ec2-user/.ansible/tmp/ansible-tmp-1780381669.8654292-27659-160293305889048/source",
+    "state": "file",
+    "uid": 1000
+}
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.20.209 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": true,
+    "checksum": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "dest": "/home/ec2-user/file1",
+    "gid": 1000,
+    "group": "ec2-user",
+    "md5sum": "d41d8cd98f00b204e9800998ecf8427e",
+    "mode": "0664",
+    "owner": "ec2-user",
+    "secontext": "unconfined_u:object_r:user_home_t:s0",
+    "size": 0,
+    "src": "/home/ec2-user/.ansible/tmp/ansible-tmp-1780381669.8654196-27658-215856644983608/source",
+    "state": "file",
+    "uid": 1000
+}
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.227 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": true,
+    "checksum": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "dest": "/home/ec2-user/file1",
+    "gid": 1000,
+    "group": "ec2-user",
+    "md5sum": "d41d8cd98f00b204e9800998ecf8427e",
+    "mode": "0664",
+    "owner": "ec2-user",
+    "secontext": "unconfined_u:object_r:user_home_t:s0",
+    "size": 0,
+    "src": "/home/ec2-user/.ansible/tmp/ansible-tmp-1780381669.8804147-27660-59354110409637/source",
+    "state": "file",
+    "uid": 1000
+}
+[ec2-user@ip-172-31-31-72 .ssh]$ 
+
+
+[ec2-user@ip-172-31-20-209 ~]$ ll
+total 0
+-rw-rw-r--. 1 ec2-user ec2-user 0 Jun  2 06:27 file1
+[ec2-user@ip-172-31-20-209 ~]$ date
+Tue Jun  2 06:28:50 UTC 2026
+[ec2-user@ip-172-31-20-209 ~]$ 
+
+==================
+
+
+[ec2-user@ip-172-31-31-72 .ssh]$ ansible all -m service -a "name=httpd state=started" -b
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.20.209 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": true,
+    "name": "httpd",
+    "state": "started",
+    "status": {
+        "AccessSELinuxContext": "system_u:object_r:httpd_unit_file_t:s0",
+        "ActiveEnterTimestampMonotonic": "0",
+        "ActiveExitTimestampMonotonic": "0",
+        "ActiveState": "inactive",
+        "After": "remote-fs.target -.mount network.target httpd-init.service systemd-journald.socket tmp.mount nss-lookup.target system.slice systemd-tmpfiles-setup.service basic.target sysinit.target",
+        "AllowIsolate": "no",
+        "AssertResult": "no",
+        "AssertTimestampMonotonic": "0",
+        "Before": "shutdown.target",
+        "BlockIOAccounting": "no",
+        "BlockIOWeight": "[not set]",
+        "CPUAccounting": "yes",
+        "CPUAffinityFromNUMA": "no",
+        "CPUQuotaPerSecUSec": "infinity",
+        "CPUQuotaPeriodUSec": "infinity",
+        "CPUSchedulingPolicy": "0",
+        "CPUSchedulingPriority": "0",
+        "CPUSchedulingResetOnFork": "no",
+        "CPUShares": "[not set]",
+        "CPUUsageNSec": "[not set]",
+        "CPUWeight": "[not set]",
+        "CacheDirectoryMode": "0755",
+        "CanFreeze": "yes",
+        "CanIsolate": "no",
+        "CanReload": "yes",
+        "CanStart": "yes",
+        "CanStop": "yes",
+        "CapabilityBoundingSet": "cap_chown cap_dac_override cap_dac_read_search cap_fowner cap_fsetid cap_kill cap_setgid cap_setuid cap_setpcap cap_linux_immutable cap_net_bind_service cap_net_broadcast cap_net_admin cap_net_raw cap_ipc_lock cap_ipc_owner cap_sys_module cap_sys_rawio cap_sys_chroot cap_sys_ptrace cap_sys_pacct cap_sys_admin cap_sys_boot cap_sys_nice cap_sys_resource cap_sys_time cap_sys_tty_config cap_mknod cap_lease cap_audit_write cap_audit_control cap_setfcap cap_mac_override cap_mac_admin cap_syslog cap_wake_alarm cap_block_suspend cap_audit_read cap_perfmon cap_bpf cap_checkpoint_restore",
+        "CleanResult": "success",
+        "CollectMode": "inactive",
+        "ConditionResult": "no",
+        "ConditionTimestampMonotonic": "0",
+        "ConfigurationDirectoryMode": "0755",
+        "Conflicts": "shutdown.target",
+        "ControlGroupId": "0",
+        "ControlPID": "0",
+        "CoredumpFilter": "0x33",
+        "DefaultDependencies": "yes",
+        "DefaultMemoryLow": "0",
+        "DefaultMemoryMin": "0",
+        "Delegate": "no",
+        "Description": "The Apache HTTP Server",
+        "DevicePolicy": "auto",
+        "Documentation": "\"man:httpd.service(8)\"",
+        "DynamicUser": "no",
+        "Environment": "LANG=C",
+        "ExecMainCode": "0",
+        "ExecMainExitTimestampMonotonic": "0",
+        "ExecMainPID": "0",
+        "ExecMainStartTimestampMonotonic": "0",
+        "ExecMainStatus": "0",
+        "ExecReload": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -k graceful ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecReloadEx": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -k graceful ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStart": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -DFOREGROUND ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStartEx": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -DFOREGROUND ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExitType": "main",
+        "FailureAction": "none",
+        "FileDescriptorStoreMax": "0",
+        "FinalKillSignal": "9",
+        "FragmentPath": "/usr/lib/systemd/system/httpd.service",
+        "FreezerState": "running",
+        "GID": "[not set]",
+        "GuessMainPID": "yes",
+        "IOAccounting": "no",
+        "IOReadBytes": "18446744073709551615",
+        "IOReadOperations": "18446744073709551615",
+        "IOSchedulingClass": "2",
+        "IOSchedulingPriority": "4",
+        "IOWeight": "[not set]",
+        "IOWriteBytes": "18446744073709551615",
+        "IOWriteOperations": "18446744073709551615",
+        "IPAccounting": "no",
+        "IPEgressBytes": "[no data]",
+        "IPEgressPackets": "[no data]",
+        "IPIngressBytes": "[no data]",
+        "IPIngressPackets": "[no data]",
+        "Id": "httpd.service",
+        "IgnoreOnIsolate": "no",
+        "IgnoreSIGPIPE": "yes",
+        "InactiveEnterTimestampMonotonic": "0",
+        "InactiveExitTimestampMonotonic": "0",
+        "JobRunningTimeoutUSec": "infinity",
+        "JobTimeoutAction": "none",
+        "JobTimeoutUSec": "infinity",
+        "KeyringMode": "private",
+        "KillMode": "mixed",
+        "KillSignal": "28",
+        "LimitAS": "infinity",
+        "LimitASSoft": "infinity",
+        "LimitCORE": "infinity",
+        "LimitCORESoft": "infinity",
+        "LimitCPU": "infinity",
+        "LimitCPUSoft": "infinity",
+        "LimitDATA": "infinity",
+        "LimitDATASoft": "infinity",
+        "LimitFSIZE": "infinity",
+        "LimitFSIZESoft": "infinity",
+        "LimitLOCKS": "infinity",
+        "LimitLOCKSSoft": "infinity",
+        "LimitMEMLOCK": "infinity",
+        "LimitMEMLOCKSoft": "infinity",
+        "LimitMSGQUEUE": "819200",
+        "LimitMSGQUEUESoft": "819200",
+        "LimitNICE": "0",
+        "LimitNICESoft": "0",
+        "LimitNOFILE": "65535",
+        "LimitNOFILESoft": "65535",
+        "LimitNPROC": "infinity",
+        "LimitNPROCSoft": "infinity",
+        "LimitRSS": "infinity",
+        "LimitRSSSoft": "infinity",
+        "LimitRTPRIO": "0",
+        "LimitRTPRIOSoft": "0",
+        "LimitRTTIME": "infinity",
+        "LimitRTTIMESoft": "infinity",
+        "LimitSIGPENDING": "30446",
+        "LimitSIGPENDINGSoft": "30446",
+        "LimitSTACK": "10485760",
+        "LimitSTACKSoft": "10485760",
+        "LoadState": "loaded",
+        "LockPersonality": "no",
+        "LogLevelMax": "-1",
+        "LogRateLimitBurst": "0",
+        "LogRateLimitIntervalUSec": "0",
+        "LogsDirectoryMode": "0755",
+        "MainPID": "0",
+        "ManagedOOMMemoryPressure": "auto",
+        "ManagedOOMMemoryPressureLimit": "0",
+        "ManagedOOMPreference": "none",
+        "ManagedOOMSwap": "auto",
+        "MemoryAccounting": "yes",
+        "MemoryAvailable": "infinity",
+        "MemoryCurrent": "[not set]",
+        "MemoryDenyWriteExecute": "no",
+        "MemoryHigh": "infinity",
+        "MemoryLimit": "infinity",
+        "MemoryLow": "0",
+        "MemoryMax": "infinity",
+        "MemoryMin": "0",
+        "MemorySwapMax": "infinity",
+        "MountAPIVFS": "no",
+        "NFileDescriptorStore": "0",
+        "NRestarts": "0",
+        "NUMAPolicy": "n/a",
+        "Names": "httpd.service",
+        "NeedDaemonReload": "no",
+        "Nice": "0",
+        "NoNewPrivileges": "no",
+        "NonBlocking": "no",
+        "NotifyAccess": "main",
+        "OOMPolicy": "continue",
+        "OOMScoreAdjust": "0",
+        "OnFailureJobMode": "replace",
+        "OnSuccessJobMode": "fail",
+        "Perpetual": "no",
+        "PrivateDevices": "no",
+        "PrivateIPC": "no",
+        "PrivateMounts": "no",
+        "PrivateNetwork": "no",
+        "PrivateTmp": "yes",
+        "PrivateUsers": "no",
+        "ProcSubset": "all",
+        "ProtectClock": "no",
+        "ProtectControlGroups": "no",
+        "ProtectHome": "no",
+        "ProtectHostname": "no",
+        "ProtectKernelLogs": "no",
+        "ProtectKernelModules": "no",
+        "ProtectKernelTunables": "no",
+        "ProtectProc": "default",
+        "ProtectSystem": "no",
+        "RefuseManualStart": "no",
+        "RefuseManualStop": "no",
+        "ReloadResult": "success",
+        "RemainAfterExit": "no",
+        "RemoveIPC": "no",
+        "Requires": "system.slice sysinit.target -.mount",
+        "RequiresMountsFor": "/var/tmp",
+        "Restart": "no",
+        "RestartKillSignal": "28",
+        "RestartUSec": "100ms",
+        "RestrictNamespaces": "no",
+        "RestrictRealtime": "no",
+        "RestrictSUIDSGID": "no",
+        "Result": "success",
+        "RootDirectoryStartOnly": "no",
+        "RuntimeDirectoryMode": "0755",
+        "RuntimeDirectoryPreserve": "no",
+        "RuntimeMaxUSec": "infinity",
+        "RuntimeRandomizedExtraUSec": "0",
+        "SameProcessGroup": "no",
+        "SecureBits": "0",
+        "SendSIGHUP": "no",
+        "SendSIGKILL": "yes",
+        "Slice": "system.slice",
+        "StandardError": "inherit",
+        "StandardInput": "null",
+        "StandardOutput": "journal",
+        "StartLimitAction": "none",
+        "StartLimitBurst": "5",
+        "StartLimitIntervalUSec": "10s",
+        "StartupBlockIOWeight": "[not set]",
+        "StartupCPUShares": "[not set]",
+        "StartupCPUWeight": "[not set]",
+        "StartupIOWeight": "[not set]",
+        "StateChangeTimestampMonotonic": "0",
+        "StateDirectoryMode": "0755",
+        "StatusErrno": "0",
+        "StopWhenUnneeded": "no",
+        "SubState": "dead",
+        "SuccessAction": "none",
+        "SyslogFacility": "3",
+        "SyslogLevel": "6",
+        "SyslogLevelPrefix": "yes",
+        "SyslogPriority": "30",
+        "SystemCallErrorNumber": "2147483646",
+        "TTYReset": "no",
+        "TTYVHangup": "no",
+        "TTYVTDisallocate": "no",
+        "TasksAccounting": "yes",
+        "TasksCurrent": "[not set]",
+        "TasksMax": "4666",
+        "TimeoutAbortUSec": "1min 30s",
+        "TimeoutCleanUSec": "infinity",
+        "TimeoutStartFailureMode": "terminate",
+        "TimeoutStartUSec": "1min 30s",
+        "TimeoutStopFailureMode": "terminate",
+        "TimeoutStopUSec": "1min 30s",
+        "TimerSlackNSec": "50000",
+        "Transient": "no",
+        "Type": "notify",
+        "UID": "[not set]",
+        "UMask": "0022",
+        "UnitFilePreset": "disabled",
+        "UnitFileState": "disabled",
+        "UtmpMode": "init",
+        "Wants": "httpd-init.service tmp.mount",
+        "WatchdogSignal": "6",
+        "WatchdogTimestampMonotonic": "0",
+        "WatchdogUSec": "infinity"
+    }
+}
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.177 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": true,
+    "name": "httpd",
+    "state": "started",
+    "status": {
+        "AccessSELinuxContext": "system_u:object_r:httpd_unit_file_t:s0",
+        "ActiveEnterTimestampMonotonic": "0",
+        "ActiveExitTimestampMonotonic": "0",
+        "ActiveState": "inactive",
+        "After": "nss-lookup.target tmp.mount -.mount systemd-tmpfiles-setup.service network.target systemd-journald.socket system.slice remote-fs.target sysinit.target httpd-init.service basic.target",
+        "AllowIsolate": "no",
+        "AssertResult": "no",
+        "AssertTimestampMonotonic": "0",
+        "Before": "shutdown.target",
+        "BlockIOAccounting": "no",
+        "BlockIOWeight": "[not set]",
+        "CPUAccounting": "yes",
+        "CPUAffinityFromNUMA": "no",
+        "CPUQuotaPerSecUSec": "infinity",
+        "CPUQuotaPeriodUSec": "infinity",
+        "CPUSchedulingPolicy": "0",
+        "CPUSchedulingPriority": "0",
+        "CPUSchedulingResetOnFork": "no",
+        "CPUShares": "[not set]",
+        "CPUUsageNSec": "[not set]",
+        "CPUWeight": "[not set]",
+        "CacheDirectoryMode": "0755",
+        "CanFreeze": "yes",
+        "CanIsolate": "no",
+        "CanReload": "yes",
+        "CanStart": "yes",
+        "CanStop": "yes",
+        "CapabilityBoundingSet": "cap_chown cap_dac_override cap_dac_read_search cap_fowner cap_fsetid cap_kill cap_setgid cap_setuid cap_setpcap cap_linux_immutable cap_net_bind_service cap_net_broadcast cap_net_admin cap_net_raw cap_ipc_lock cap_ipc_owner cap_sys_module cap_sys_rawio cap_sys_chroot cap_sys_ptrace cap_sys_pacct cap_sys_admin cap_sys_boot cap_sys_nice cap_sys_resource cap_sys_time cap_sys_tty_config cap_mknod cap_lease cap_audit_write cap_audit_control cap_setfcap cap_mac_override cap_mac_admin cap_syslog cap_wake_alarm cap_block_suspend cap_audit_read cap_perfmon cap_bpf cap_checkpoint_restore",
+        "CleanResult": "success",
+        "CollectMode": "inactive",
+        "ConditionResult": "no",
+        "ConditionTimestampMonotonic": "0",
+        "ConfigurationDirectoryMode": "0755",
+        "Conflicts": "shutdown.target",
+        "ControlGroupId": "0",
+        "ControlPID": "0",
+        "CoredumpFilter": "0x33",
+        "DefaultDependencies": "yes",
+        "DefaultMemoryLow": "0",
+        "DefaultMemoryMin": "0",
+        "Delegate": "no",
+        "Description": "The Apache HTTP Server",
+        "DevicePolicy": "auto",
+        "Documentation": "\"man:httpd.service(8)\"",
+        "DynamicUser": "no",
+        "Environment": "LANG=C",
+        "ExecMainCode": "0",
+        "ExecMainExitTimestampMonotonic": "0",
+        "ExecMainPID": "0",
+        "ExecMainStartTimestampMonotonic": "0",
+        "ExecMainStatus": "0",
+        "ExecReload": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -k graceful ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecReloadEx": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -k graceful ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStart": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -DFOREGROUND ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStartEx": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -DFOREGROUND ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExitType": "main",
+        "FailureAction": "none",
+        "FileDescriptorStoreMax": "0",
+        "FinalKillSignal": "9",
+        "FragmentPath": "/usr/lib/systemd/system/httpd.service",
+        "FreezerState": "running",
+        "GID": "[not set]",
+        "GuessMainPID": "yes",
+        "IOAccounting": "no",
+        "IOReadBytes": "18446744073709551615",
+        "IOReadOperations": "18446744073709551615",
+        "IOSchedulingClass": "2",
+        "IOSchedulingPriority": "4",
+        "IOWeight": "[not set]",
+        "IOWriteBytes": "18446744073709551615",
+        "IOWriteOperations": "18446744073709551615",
+        "IPAccounting": "no",
+        "IPEgressBytes": "[no data]",
+        "IPEgressPackets": "[no data]",
+        "IPIngressBytes": "[no data]",
+        "IPIngressPackets": "[no data]",
+        "Id": "httpd.service",
+        "IgnoreOnIsolate": "no",
+        "IgnoreSIGPIPE": "yes",
+        "InactiveEnterTimestampMonotonic": "0",
+        "InactiveExitTimestampMonotonic": "0",
+        "JobRunningTimeoutUSec": "infinity",
+        "JobTimeoutAction": "none",
+        "JobTimeoutUSec": "infinity",
+        "KeyringMode": "private",
+        "KillMode": "mixed",
+        "KillSignal": "28",
+        "LimitAS": "infinity",
+        "LimitASSoft": "infinity",
+        "LimitCORE": "infinity",
+        "LimitCORESoft": "infinity",
+        "LimitCPU": "infinity",
+        "LimitCPUSoft": "infinity",
+        "LimitDATA": "infinity",
+        "LimitDATASoft": "infinity",
+        "LimitFSIZE": "infinity",
+        "LimitFSIZESoft": "infinity",
+        "LimitLOCKS": "infinity",
+        "LimitLOCKSSoft": "infinity",
+        "LimitMEMLOCK": "infinity",
+        "LimitMEMLOCKSoft": "infinity",
+        "LimitMSGQUEUE": "819200",
+        "LimitMSGQUEUESoft": "819200",
+        "LimitNICE": "0",
+        "LimitNICESoft": "0",
+        "LimitNOFILE": "65535",
+        "LimitNOFILESoft": "65535",
+        "LimitNPROC": "infinity",
+        "LimitNPROCSoft": "infinity",
+        "LimitRSS": "infinity",
+        "LimitRSSSoft": "infinity",
+        "LimitRTPRIO": "0",
+        "LimitRTPRIOSoft": "0",
+        "LimitRTTIME": "infinity",
+        "LimitRTTIMESoft": "infinity",
+        "LimitSIGPENDING": "30446",
+        "LimitSIGPENDINGSoft": "30446",
+        "LimitSTACK": "10485760",
+        "LimitSTACKSoft": "10485760",
+        "LoadState": "loaded",
+        "LockPersonality": "no",
+        "LogLevelMax": "-1",
+        "LogRateLimitBurst": "0",
+        "LogRateLimitIntervalUSec": "0",
+        "LogsDirectoryMode": "0755",
+        "MainPID": "0",
+        "ManagedOOMMemoryPressure": "auto",
+        "ManagedOOMMemoryPressureLimit": "0",
+        "ManagedOOMPreference": "none",
+        "ManagedOOMSwap": "auto",
+        "MemoryAccounting": "yes",
+        "MemoryAvailable": "infinity",
+        "MemoryCurrent": "[not set]",
+        "MemoryDenyWriteExecute": "no",
+        "MemoryHigh": "infinity",
+        "MemoryLimit": "infinity",
+        "MemoryLow": "0",
+        "MemoryMax": "infinity",
+        "MemoryMin": "0",
+        "MemorySwapMax": "infinity",
+        "MountAPIVFS": "no",
+        "NFileDescriptorStore": "0",
+        "NRestarts": "0",
+        "NUMAPolicy": "n/a",
+        "Names": "httpd.service",
+        "NeedDaemonReload": "no",
+        "Nice": "0",
+        "NoNewPrivileges": "no",
+        "NonBlocking": "no",
+        "NotifyAccess": "main",
+        "OOMPolicy": "continue",
+        "OOMScoreAdjust": "0",
+        "OnFailureJobMode": "replace",
+        "OnSuccessJobMode": "fail",
+        "Perpetual": "no",
+        "PrivateDevices": "no",
+        "PrivateIPC": "no",
+        "PrivateMounts": "no",
+        "PrivateNetwork": "no",
+        "PrivateTmp": "yes",
+        "PrivateUsers": "no",
+        "ProcSubset": "all",
+        "ProtectClock": "no",
+        "ProtectControlGroups": "no",
+        "ProtectHome": "no",
+        "ProtectHostname": "no",
+        "ProtectKernelLogs": "no",
+        "ProtectKernelModules": "no",
+        "ProtectKernelTunables": "no",
+        "ProtectProc": "default",
+        "ProtectSystem": "no",
+        "RefuseManualStart": "no",
+        "RefuseManualStop": "no",
+        "ReloadResult": "success",
+        "RemainAfterExit": "no",
+        "RemoveIPC": "no",
+        "Requires": "system.slice sysinit.target -.mount",
+        "RequiresMountsFor": "/var/tmp",
+        "Restart": "no",
+        "RestartKillSignal": "28",
+        "RestartUSec": "100ms",
+        "RestrictNamespaces": "no",
+        "RestrictRealtime": "no",
+        "RestrictSUIDSGID": "no",
+        "Result": "success",
+        "RootDirectoryStartOnly": "no",
+        "RuntimeDirectoryMode": "0755",
+        "RuntimeDirectoryPreserve": "no",
+        "RuntimeMaxUSec": "infinity",
+        "RuntimeRandomizedExtraUSec": "0",
+        "SameProcessGroup": "no",
+        "SecureBits": "0",
+        "SendSIGHUP": "no",
+        "SendSIGKILL": "yes",
+        "Slice": "system.slice",
+        "StandardError": "inherit",
+        "StandardInput": "null",
+        "StandardOutput": "journal",
+        "StartLimitAction": "none",
+        "StartLimitBurst": "5",
+        "StartLimitIntervalUSec": "10s",
+        "StartupBlockIOWeight": "[not set]",
+        "StartupCPUShares": "[not set]",
+        "StartupCPUWeight": "[not set]",
+        "StartupIOWeight": "[not set]",
+        "StateChangeTimestampMonotonic": "0",
+        "StateDirectoryMode": "0755",
+        "StatusErrno": "0",
+        "StopWhenUnneeded": "no",
+        "SubState": "dead",
+        "SuccessAction": "none",
+        "SyslogFacility": "3",
+        "SyslogLevel": "6",
+        "SyslogLevelPrefix": "yes",
+        "SyslogPriority": "30",
+        "SystemCallErrorNumber": "2147483646",
+        "TTYReset": "no",
+        "TTYVHangup": "no",
+        "TTYVTDisallocate": "no",
+        "TasksAccounting": "yes",
+        "TasksCurrent": "[not set]",
+        "TasksMax": "4666",
+        "TimeoutAbortUSec": "1min 30s",
+        "TimeoutCleanUSec": "infinity",
+        "TimeoutStartFailureMode": "terminate",
+        "TimeoutStartUSec": "1min 30s",
+        "TimeoutStopFailureMode": "terminate",
+        "TimeoutStopUSec": "1min 30s",
+        "TimerSlackNSec": "50000",
+        "Transient": "no",
+        "Type": "notify",
+        "UID": "[not set]",
+        "UMask": "0022",
+        "UnitFilePreset": "disabled",
+        "UnitFileState": "disabled",
+        "UtmpMode": "init",
+        "Wants": "tmp.mount httpd-init.service",
+        "WatchdogSignal": "6",
+        "WatchdogTimestampMonotonic": "0",
+        "WatchdogUSec": "infinity"
+    }
+}
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+172.31.19.227 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": true,
+    "name": "httpd",
+    "state": "started",
+    "status": {
+        "AccessSELinuxContext": "system_u:object_r:httpd_unit_file_t:s0",
+        "ActiveEnterTimestampMonotonic": "0",
+        "ActiveExitTimestampMonotonic": "0",
+        "ActiveState": "inactive",
+        "After": "systemd-journald.socket tmp.mount system.slice -.mount network.target sysinit.target basic.target nss-lookup.target remote-fs.target systemd-tmpfiles-setup.service httpd-init.service",
+        "AllowIsolate": "no",
+        "AssertResult": "no",
+        "AssertTimestampMonotonic": "0",
+        "Before": "shutdown.target",
+        "BlockIOAccounting": "no",
+        "BlockIOWeight": "[not set]",
+        "CPUAccounting": "yes",
+        "CPUAffinityFromNUMA": "no",
+        "CPUQuotaPerSecUSec": "infinity",
+        "CPUQuotaPeriodUSec": "infinity",
+        "CPUSchedulingPolicy": "0",
+        "CPUSchedulingPriority": "0",
+        "CPUSchedulingResetOnFork": "no",
+        "CPUShares": "[not set]",
+        "CPUUsageNSec": "[not set]",
+        "CPUWeight": "[not set]",
+        "CacheDirectoryMode": "0755",
+        "CanFreeze": "yes",
+        "CanIsolate": "no",
+        "CanReload": "yes",
+        "CanStart": "yes",
+        "CanStop": "yes",
+        "CapabilityBoundingSet": "cap_chown cap_dac_override cap_dac_read_search cap_fowner cap_fsetid cap_kill cap_setgid cap_setuid cap_setpcap cap_linux_immutable cap_net_bind_service cap_net_broadcast cap_net_admin cap_net_raw cap_ipc_lock cap_ipc_owner cap_sys_module cap_sys_rawio cap_sys_chroot cap_sys_ptrace cap_sys_pacct cap_sys_admin cap_sys_boot cap_sys_nice cap_sys_resource cap_sys_time cap_sys_tty_config cap_mknod cap_lease cap_audit_write cap_audit_control cap_setfcap cap_mac_override cap_mac_admin cap_syslog cap_wake_alarm cap_block_suspend cap_audit_read cap_perfmon cap_bpf cap_checkpoint_restore",
+        "CleanResult": "success",
+        "CollectMode": "inactive",
+        "ConditionResult": "no",
+        "ConditionTimestampMonotonic": "0",
+        "ConfigurationDirectoryMode": "0755",
+        "Conflicts": "shutdown.target",
+        "ControlGroupId": "0",
+        "ControlPID": "0",
+        "CoredumpFilter": "0x33",
+        "DefaultDependencies": "yes",
+        "DefaultMemoryLow": "0",
+        "DefaultMemoryMin": "0",
+        "Delegate": "no",
+        "Description": "The Apache HTTP Server",
+        "DevicePolicy": "auto",
+        "Documentation": "\"man:httpd.service(8)\"",
+        "DynamicUser": "no",
+        "Environment": "LANG=C",
+        "ExecMainCode": "0",
+        "ExecMainExitTimestampMonotonic": "0",
+        "ExecMainPID": "0",
+        "ExecMainStartTimestampMonotonic": "0",
+        "ExecMainStatus": "0",
+        "ExecReload": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -k graceful ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecReloadEx": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -k graceful ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStart": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -DFOREGROUND ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExecStartEx": "{ path=/usr/sbin/httpd ; argv[]=/usr/sbin/httpd $OPTIONS -DFOREGROUND ; flags= ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }",
+        "ExitType": "main",
+        "FailureAction": "none",
+        "FileDescriptorStoreMax": "0",
+        "FinalKillSignal": "9",
+        "FragmentPath": "/usr/lib/systemd/system/httpd.service",
+        "FreezerState": "running",
+        "GID": "[not set]",
+        "GuessMainPID": "yes",
+        "IOAccounting": "no",
+        "IOReadBytes": "18446744073709551615",
+        "IOReadOperations": "18446744073709551615",
+        "IOSchedulingClass": "2",
+        "IOSchedulingPriority": "4",
+        "IOWeight": "[not set]",
+        "IOWriteBytes": "18446744073709551615",
+        "IOWriteOperations": "18446744073709551615",
+        "IPAccounting": "no",
+        "IPEgressBytes": "[no data]",
+        "IPEgressPackets": "[no data]",
+        "IPIngressBytes": "[no data]",
+        "IPIngressPackets": "[no data]",
+        "Id": "httpd.service",
+        "IgnoreOnIsolate": "no",
+        "IgnoreSIGPIPE": "yes",
+        "InactiveEnterTimestampMonotonic": "0",
+        "InactiveExitTimestampMonotonic": "0",
+        "JobRunningTimeoutUSec": "infinity",
+        "JobTimeoutAction": "none",
+        "JobTimeoutUSec": "infinity",
+        "KeyringMode": "private",
+        "KillMode": "mixed",
+        "KillSignal": "28",
+        "LimitAS": "infinity",
+        "LimitASSoft": "infinity",
+        "LimitCORE": "infinity",
+        "LimitCORESoft": "infinity",
+        "LimitCPU": "infinity",
+        "LimitCPUSoft": "infinity",
+        "LimitDATA": "infinity",
+        "LimitDATASoft": "infinity",
+        "LimitFSIZE": "infinity",
+        "LimitFSIZESoft": "infinity",
+        "LimitLOCKS": "infinity",
+        "LimitLOCKSSoft": "infinity",
+        "LimitMEMLOCK": "infinity",
+        "LimitMEMLOCKSoft": "infinity",
+        "LimitMSGQUEUE": "819200",
+        "LimitMSGQUEUESoft": "819200",
+        "LimitNICE": "0",
+        "LimitNICESoft": "0",
+        "LimitNOFILE": "65535",
+        "LimitNOFILESoft": "65535",
+        "LimitNPROC": "infinity",
+        "LimitNPROCSoft": "infinity",
+        "LimitRSS": "infinity",
+        "LimitRSSSoft": "infinity",
+        "LimitRTPRIO": "0",
+        "LimitRTPRIOSoft": "0",
+        "LimitRTTIME": "infinity",
+        "LimitRTTIMESoft": "infinity",
+        "LimitSIGPENDING": "30446",
+        "LimitSIGPENDINGSoft": "30446",
+        "LimitSTACK": "10485760",
+        "LimitSTACKSoft": "10485760",
+        "LoadState": "loaded",
+        "LockPersonality": "no",
+        "LogLevelMax": "-1",
+        "LogRateLimitBurst": "0",
+        "LogRateLimitIntervalUSec": "0",
+        "LogsDirectoryMode": "0755",
+        "MainPID": "0",
+        "ManagedOOMMemoryPressure": "auto",
+        "ManagedOOMMemoryPressureLimit": "0",
+        "ManagedOOMPreference": "none",
+        "ManagedOOMSwap": "auto",
+        "MemoryAccounting": "yes",
+        "MemoryAvailable": "infinity",
+        "MemoryCurrent": "[not set]",
+        "MemoryDenyWriteExecute": "no",
+        "MemoryHigh": "infinity",
+        "MemoryLimit": "infinity",
+        "MemoryLow": "0",
+        "MemoryMax": "infinity",
+        "MemoryMin": "0",
+        "MemorySwapMax": "infinity",
+        "MountAPIVFS": "no",
+        "NFileDescriptorStore": "0",
+        "NRestarts": "0",
+        "NUMAPolicy": "n/a",
+        "Names": "httpd.service",
+        "NeedDaemonReload": "no",
+        "Nice": "0",
+        "NoNewPrivileges": "no",
+        "NonBlocking": "no",
+        "NotifyAccess": "main",
+        "OOMPolicy": "continue",
+        "OOMScoreAdjust": "0",
+        "OnFailureJobMode": "replace",
+        "OnSuccessJobMode": "fail",
+        "Perpetual": "no",
+        "PrivateDevices": "no",
+        "PrivateIPC": "no",
+        "PrivateMounts": "no",
+        "PrivateNetwork": "no",
+        "PrivateTmp": "yes",
+        "PrivateUsers": "no",
+        "ProcSubset": "all",
+        "ProtectClock": "no",
+        "ProtectControlGroups": "no",
+        "ProtectHome": "no",
+        "ProtectHostname": "no",
+        "ProtectKernelLogs": "no",
+        "ProtectKernelModules": "no",
+        "ProtectKernelTunables": "no",
+        "ProtectProc": "default",
+        "ProtectSystem": "no",
+        "RefuseManualStart": "no",
+        "RefuseManualStop": "no",
+        "ReloadResult": "success",
+        "RemainAfterExit": "no",
+        "RemoveIPC": "no",
+        "Requires": "-.mount system.slice sysinit.target",
+        "RequiresMountsFor": "/var/tmp",
+        "Restart": "no",
+        "RestartKillSignal": "28",
+        "RestartUSec": "100ms",
+        "RestrictNamespaces": "no",
+        "RestrictRealtime": "no",
+        "RestrictSUIDSGID": "no",
+        "Result": "success",
+        "RootDirectoryStartOnly": "no",
+        "RuntimeDirectoryMode": "0755",
+        "RuntimeDirectoryPreserve": "no",
+        "RuntimeMaxUSec": "infinity",
+        "RuntimeRandomizedExtraUSec": "0",
+        "SameProcessGroup": "no",
+        "SecureBits": "0",
+        "SendSIGHUP": "no",
+        "SendSIGKILL": "yes",
+        "Slice": "system.slice",
+        "StandardError": "inherit",
+        "StandardInput": "null",
+        "StandardOutput": "journal",
+        "StartLimitAction": "none",
+        "StartLimitBurst": "5",
+        "StartLimitIntervalUSec": "10s",
+        "StartupBlockIOWeight": "[not set]",
+        "StartupCPUShares": "[not set]",
+        "StartupCPUWeight": "[not set]",
+        "StartupIOWeight": "[not set]",
+        "StateChangeTimestampMonotonic": "0",
+        "StateDirectoryMode": "0755",
+        "StatusErrno": "0",
+        "StopWhenUnneeded": "no",
+        "SubState": "dead",
+        "SuccessAction": "none",
+        "SyslogFacility": "3",
+        "SyslogLevel": "6",
+        "SyslogLevelPrefix": "yes",
+        "SyslogPriority": "30",
+        "SystemCallErrorNumber": "2147483646",
+        "TTYReset": "no",
+        "TTYVHangup": "no",
+        "TTYVTDisallocate": "no",
+        "TasksAccounting": "yes",
+        "TasksCurrent": "[not set]",
+        "TasksMax": "4666",
+        "TimeoutAbortUSec": "1min 30s",
+        "TimeoutCleanUSec": "infinity",
+        "TimeoutStartFailureMode": "terminate",
+        "TimeoutStartUSec": "1min 30s",
+        "TimeoutStopFailureMode": "terminate",
+        "TimeoutStopUSec": "1min 30s",
+        "TimerSlackNSec": "50000",
+        "Transient": "no",
+        "Type": "notify",
+        "UID": "[not set]",
+        "UMask": "0022",
+        "UnitFilePreset": "disabled",
+        "UnitFileState": "disabled",
+        "UtmpMode": "init",
+        "Wants": "httpd-init.service tmp.mount",
+        "WatchdogSignal": "6",
+        "WatchdogTimestampMonotonic": "0",
+        "WatchdogUSec": "infinity"
+    }
+}
+[ec2-user@ip-172-31-31-72 .ssh]$ 
+
+
+browser and allow sg all traffic 
+
+public ip 
+
+
+http://54.197.194.51/
+
+IT wokrs!
+======================
+
+We can give above instructions in yaml called playbook yaml file 
+
+ansible playbook always started with
+
+---
+and - name: My Playbook
+host: all
+become: yes
+tasks:
+  - name: Install Httpd
+yum: 
+name: httpd
+state: latest
+-name: start httpd service
+service: 
+name:httpd
+state:started
+
+ansible all -m yum -a "name=httpd state=latest" -b
+
+ ansible all -m service -a "name=httpd state=started" -b
+
+
+ 
+---
+and - name: My Playbook
+host: all ------------------------------- all
+become: yes  ---------------------- -b
+tasks:
+  - name: Install Httpd
+yum: --------------------------yum 
+name: httpd
+state: latest
+-name: start httpd service
+service: 
+name:httpd
+state:started  
+
+
+=============
+
+
+[ec2-user@ip-172-31-31-72 ~]$ cat ansible-playbook.yaml 
+---
+- name: first playbook
+  hosts: all
+  become: yes
+  tasks:
+    - name: install httpd software
+      yum:
+        name: httpd
+        state: latest
+    - name: start web server
+      service:
+        name: httpd
+        state: started
+
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook ansible-playbook.yaml 
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+ok: [172.31.19.177]
+ok: [172.31.19.227]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+ok: [172.31.19.177]
+ok: [172.31.19.227]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+
+--------------------------
+
+ec2-user@ip-172-31-31-72 ~]$ ansible-playbook ansible-playbook.yaml 
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+changed: [172.31.19.177]
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+TASK [copying the files] ******************************************************************************************************************************************************************************************
+changed: [172.31.19.177]
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+
+TASK [restart server] *********************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ cat ansible-playbook.yaml 
+---
+- name: first playbook
+  hosts: all
+  become: yes
+  tasks:
+    - name: install httpd software
+      yum:
+        name: httpd
+        state: latest
+    - name: start web server
+      service:
+        name: httpd
+        state: started
+    - name: copying the files
+      copy:
+        src: index.html
+        dest: /var/www/html/index.html
+    - name: restart server
+      service:
+        name: httpd
+        state: restarted
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+
+[ec2-user@ip-172-31-31-72 ~]$ cat ansible-playbook.yaml 
+---
+- name: first playbook
+  hosts: a
+  become: yes
+  tasks:
+    - name: install httpd software
+      yum:
+        name: httpd
+        state: latest
+    - name: start web server
+      service:
+        name: httpd
+        state: started
+    - name: copying the files
+      copy:
+        src: index.html
+        dest: /var/www/html/index.html
+    - name: restart server
+      service:
+        name: httpd
+        state: restarted
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook ansible-playbook.yaml 
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [copying the files] ******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [restart server] *********************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.20.209              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ vi playbook-varibale.yaml
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook ansible-playbook.yaml 
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [copying the files] ******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [restart server] *********************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.20.209              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ cat playbook-varibale.yaml 
+---
+- name: first playbook
+  hosts: all
+  become: yes
+  vars:
+    - a: httpd
+    - b: present
+    - c: started
+    - d: restarted
+    
+
+  tasks:
+    - name: install httpd software
+      yum:
+        name: "{{a}}"
+        state: "{{b}}"
+    - name: start web server
+      service:
+        name: "{{a}}"
+        state: "{{c}}"
+    - name: copying the files
+      copy:
+        src: index.html
+        dest: /var/www/html/index.html
+    - name: restart server
+      service:
+        name: "{{a}}"
+        state: "{{d}}"
+[ec2-user@ip-172-31-31-72 ~]$ sudo cat /etc/ansible/hosts
+[a]
+172.31.20.209
+[b]
+172.31.19.177
+[c]
+172.31.19.227
+[ec2-user@ip-172-31-31-72 ~]$ vi playbook-varibale.yaml
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook ansible-playbook.yaml 
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [copying the files] ******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+
+TASK [restart server] *********************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.20.209              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook playbook-varibale.yaml 
+ERROR! We were unable to read either as JSON nor YAML, these are the errors we got from each:
+JSON: Expecting value: line 1 column 1 (char 0)
+
+Syntax Error while loading YAML.
+  mapping values are not allowed in this context
+
+The error appears to be in '/home/ec2-user/playbook-varibale.yaml': line 5, column 8, but may
+be elsewhere in the file depending on the exact syntax problem.
+
+The offending line appears to be:
+
+  become: yes
+   vars:
+       ^ here
+[ec2-user@ip-172-31-31-72 ~]$ ll
+total 12
+-rw-r--r--. 1 ec2-user ec2-user 428 Jun  2 06:52 ansible-playbook.yaml
+-rw-r--r--. 1 ec2-user ec2-user  31 Jun  2 06:49 index.html
+-rw-r--r--. 1 ec2-user ec2-user 498 Jun  2 06:58 playbook-varibale.yaml
+[ec2-user@ip-172-31-31-72 ~]$ vi playbook-varibale.yaml 
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook playbook-varibale.yaml --syntax-check
+
+playbook: playbook-varibale.yaml
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook playbook-varibale.yaml 
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+ok: [172.31.19.227]
+ok: [172.31.19.177]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+ok: [172.31.19.177]
+ok: [172.31.20.209]
+ok: [172.31.19.227]
+
+TASK [copying the files] ******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+ok: [172.31.19.227]
+ok: [172.31.19.177]
+
+TASK [restart server] *********************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=5    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ cat playbook-varibale.yaml 
+---
+- name: first playbook
+  hosts: all
+  become: yes
+
+  vars:
+    a: httpd
+    b: present
+    c: started
+    d: restarted
+
+  tasks:
+    - name: install httpd software
+      yum:
+        name: "{{ a }}"
+        state: "{{ b }}"
+
+    - name: start web server
+      service:
+        name: "{{ a }}"
+        state: "{{ c }}"
+
+    - name: copying the files
+      copy:
+        src: index.html
+        dest: /var/www/html/index.html
+
+    - name: restart server
+      service:
+        name: "{{ a }}"
+        state: "{{ d }}"
+[ec2-user@ip-172-31-31-72 ~]$ cat ansible-playbook.yaml 
+---
+- name: first playbook
+  hosts: a
+  become: yes
+  tasks:
+    - name: install httpd software
+      yum:
+        name: httpd
+        state: latest
+    - name: start web server
+      service:
+        name: httpd
+        state: started
+    - name: copying the files
+      copy:
+        src: index.html
+        dest: /var/www/html/index.html
+    - name: restart server
+      service:
+        name: httpd
+        state: restarted
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+----------
+
+
+You have two completely different concepts that happen to use the same names (a, b, c).
+
+1. Inventory Groups (Hosts)
+
+In /etc/ansible/hosts:
+
+[a]
+172.31.20.209
+
+[b]
+172.31.19.177
+
+[c]
+172.31.19.227
+
+These groups decide which servers Ansible targets.
+
+Example:
+
+hosts: a
+
+means:
+
+Run on 172.31.20.209 only
+2. Tags (Tasks)
+
+In your playbook:
+
+- name: installing git
+  tags: a
+
+- name: installing maven
+  tags: b
+
+- name: create user
+  tags: c
+
+These tags decide which tasks execute.
+
+Example:
+
+ansible-playbook tags.yaml --tags c
+
+means:
+
+Run only the "create user" task
+
+on all hosts matched by hosts:.
+
+Visualize it like this
+
+Hosts = WHERE
+
+hosts: all
+172.31.20.209
+172.31.19.177
+172.31.19.227
+
+Tags = WHAT
+
+--tags c
+Only create user task
+Example
+ansible-playbook tags.yaml --tags c
+
+Interpretation:
+
+WHERE?  -> hosts: all
+          3 servers
+
+WHAT?   -> tag c
+          create user task only
+
+Result:
+
+Create user on all 3 servers
+Another example
+ansible-playbook tags.yaml --tags a --limit b
+
+Interpretation:
+
+WHERE?  -> group b
+          172.31.19.177
+
+WHAT?   -> tag a
+          install git
+
+Result:
+
+Install git only on 172.31.19.177
+
+A common practice in real projects is to avoid naming tags a, b, c. Instead use meaningful names:
+
+tags:
+  - install
+
+tags:
+  - configure
+
+tags:
+  - deploy
+
+tags:
+  - restart
+
+This makes playbooks much easier to understand and maintain.
+
+---
+ec2-user@ip-172-31-31-72 ~]$ sudo cat /etc/ansible/hosts
+[a]
+172.31.20.209
+[b]
+172.31.19.177
+[c]
+172.31.19.227
+[ec2-user@ip-172-31-31-72 ~]$ vi loop.yaml
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook loop.yaml --syntax-check
+
+playbook: loop.yaml
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook loop.yaml
+
+PLAY [loopr playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [install multiple softwares] *********************************************************************************************************************************************************************************
+ok: [172.31.20.209] => (item=git)
+ok: [172.31.19.227] => (item=git)
+ok: [172.31.19.177] => (item=git)
+ok: [172.31.20.209] => (item=tree)
+ok: [172.31.19.227] => (item=tree)
+ok: [172.31.19.177] => (item=tree)
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ cat loop.yaml 
+---
+- name: loopr playbook
+  hosts: all
+  become: yes
+  tasks:
+    - name: install multiple softwares
+      yum:
+        name: "{{item}}"
+        state: latest
+      with_items:
+        - git
+        - tree
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+
+--------------------
+
+
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook multiloop.yaml 
+
+PLAY [loopr playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [install multiple softwares] *********************************************************************************************************************************************************************************
+ok: [172.31.20.209] => (item={'x': 'httpd', 'y': 'latest'})
+ok: [172.31.19.227] => (item={'x': 'httpd', 'y': 'latest'})
+ok: [172.31.19.177] => (item={'x': 'httpd', 'y': 'latest'})
+changed: [172.31.20.209] => (item={'x': 'git', 'y': 'absent'})
+changed: [172.31.19.177] => (item={'x': 'git', 'y': 'absent'})
+changed: [172.31.19.227] => (item={'x': 'git', 'y': 'absent'})
+ok: [172.31.20.209] => (item={'x': 'tree', 'y': 'latest'})
+ok: [172.31.19.227] => (item={'x': 'tree', 'y': 'latest'})
+ok: [172.31.19.177] => (item={'x': 'tree', 'y': 'latest'})
+
+TASK [start httpd server] *****************************************************************************************************************************************************************************************
+ok: [172.31.20.209] => (item={'x': 'httpd', 'z': 'started'})
+ok: [172.31.19.227] => (item={'x': 'httpd', 'z': 'started'})
+ok: [172.31.19.177] => (item={'x': 'httpd', 'z': 'started'})
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ cat multiloop.yaml 
+---
+- name: loopr playbook
+  hosts: all
+  become: yes
+  tasks:
+    - name: install multiple softwares
+      yum:
+        name: "{{item.x}}"
+        state: "{{item.y}}"
+      with_items:
+        - {x: httpd, y: latest}
+        - {x: git, y: absent}
+        - {x: tree, y: latest}
+    - name: start httpd server
+      service:
+        name: "{{item.x}}"
+        state: "{{item.z}}"
+      with_items:
+        - {x: httpd, z: started}
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+
+-------------------------
+
+
+

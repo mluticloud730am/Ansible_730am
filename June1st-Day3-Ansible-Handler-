@@ -1,0 +1,539 @@
+ec2-user@ip-172-31-31-72 ~]$ ll
+total 28
+-rw-r--r--. 1 ec2-user ec2-user 428 Jun  2 06:52 ansible-playbook.yaml
+-rw-r--r--. 1 ec2-user ec2-user 479 Jun  2 07:20 handler.yaml
+-rw-r--r--. 1 ec2-user ec2-user  31 Jun  2 06:49 index.html
+-rw-r--r--. 1 ec2-user ec2-user 207 Jun  2 07:14 loop.yaml
+-rw-r--r--. 1 ec2-user ec2-user 431 Jun  2 07:15 multiloop.yaml
+-rw-r--r--. 1 ec2-user ec2-user 520 Jun  2 07:00 playbook-varibale.yaml
+-rw-r--r--. 1 ec2-user ec2-user 598 Jun  2 07:05 tags.yaml
+[ec2-user@ip-172-31-31-72 ~]$ vi index.html 
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook handler.yaml
+
+PLAY [first playbook] *********************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [install httpd software] *************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+ok: [172.31.19.177]
+ok: [172.31.19.227]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+ok: [172.31.19.227]
+ok: [172.31.20.209]
+ok: [172.31.19.177]
+
+TASK [copying the files] ******************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+RUNNING HANDLER [Restart web server] ******************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ cat index.html 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ansible Demo</title>
+</head>
+<body>
+    <h1>Welcome to Ansible Automation</h1>
+
+    <p>
+        Ansible is an open-source automation tool used for
+        configuration management, application deployment,
+        server provisioning, and orchestration.
+    </p>
+
+    <h2>Key Features</h2>
+    <ul>
+        <li>Agentless Architecture</li>
+        <li>Uses SSH for Communication</li>
+        <li>Simple YAML Playbooks</li>
+        <li>Automates Repetitive Tasks</li>
+        <li>Supports Cloud and On-Premises Environments</li>
+    </ul>
+
+    <h2>Common Use Cases</h2>
+    <ul>
+        <li>Install Packages</li>
+        <li>Manage Services</li>
+        <li>Create Users</li>
+        <li>Deploy Applications</li>
+        <li>Configure Servers</li>
+    </ul>
+
+    <p><b>Managed by Ansible Playbook</b></p>
+</body>
+</html>
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+-==========================
+
+ec2-user@ip-172-31-31-72 ~]$ cat cloud-watch.yaml 
+---
+- name: Setup Apache and CloudWatch on EC2
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Install CloudWatch Agent
+      yum:
+        name: amazon-cloudwatch-agent
+        state: present
+
+    - name: Create CloudWatch agent config
+      copy:
+        dest: /opt/aws/amazon-cloudwatch-agent/bin/config.json
+        content: |
+          {
+            "logs": {
+              "logs_collected": {
+                "files": {
+                  "collect_list": [
+                    {
+                      "file_path": "/var/log/*",
+                      "log_group_name": "LOG-FROM-EC2",
+                      "log_stream_name": " {instance_id}",
+                      "retention_in_days": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+
+    - name: Start the CloudWatch agent
+      command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+
+    - name: Check CloudWatch agent status
+      command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status
+      register: cw_agent_status
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook cloud-watch.yaml --syntax-check
+
+playbook: cloud-watch.yaml
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook cloud-watch.yaml
+
+PLAY [Setup Apache and CloudWatch on EC2] *************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [Install CloudWatch Agent] ***********************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.177]
+changed: [172.31.19.227]
+
+TASK [Create CloudWatch agent config] *****************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.177]
+changed: [172.31.19.227]
+
+TASK [Start the CloudWatch agent] *********************************************************************************************************************************************************************************
+changed: [172.31.19.177]
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+
+TASK [Check CloudWatch agent status] ******************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.177]
+changed: [172.31.19.227]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+
+====================
+For above cloud watch logs to push to cloudewatch ec2 admin access needed and need to create a role also should be attached to all tragets in this handson i have attached all 3 nodes with ec2admin role 
+
+
+Log groups
+
+Data sources - new
+
+Summary
+Get-set-go with unified data store
+Log groups (2)
+
+Filters
+Actions
+View in Logs Insights
+Start tailing
+Create log group
+By default, we only load up to 10,000 log groups.
+
+
+1
+
+
+Exact match
+Log group
+	
+Log class
+	
+Anomaly detection
+	
+Deletion protection
+	
+Bearer token authentication
+	
+Data protection
+	
+Sensitive data count
+	
+Retention
+	
+Metric filters
+	
+Contributor Insights
+	
+Subscription filters
+
+Log group
+	
+Log class
+	
+Anomaly detection
+	
+Deletion protection
+	
+Bearer token authentication
+	
+Data protection
+	
+Sensitive data count
+	
+Retention
+	
+Metric filters
+	
+Contributor Insights
+	
+Subscription filters
+
+/aws/lambda/cfst-1449-28fc940f3dceb7ab6064350a208-InitFunction-a42CM1XAjuuK
+Standard
+Configure
+Off
+Off
+-
+-
+Never expire
+-
+-
+-
+LOG-FROM-EC2
+Standard
+Configure
+Off
+Off
+-
+-
+1 day
+-
+=============
+
+ec2-user@ip-172-31-31-72 ~]$ ansible-playbook ne.yaml --syntax-check
+
+playbook: ne.yaml
+[ec2-user@ip-172-31-31-72 ~]$ ansible-playbook ne.yaml 
+
+PLAY [Install Node Exporter] **************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+
+TASK [Create node exporter user] **********************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+TASK [Download node exporter] *************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.177]
+changed: [172.31.19.227]
+
+TASK [Extract node exporter] **************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+TASK [Copy binary] ************************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.177]
+changed: [172.31.19.227]
+
+TASK [Create systemd service file] ********************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.177]
+changed: [172.31.19.227]
+
+TASK [Reload systemd] *********************************************************************************************************************************************************************************************
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+changed: [172.31.20.209]
+
+TASK [Enable and start node exporter] *****************************************************************************************************************************************************************************
+changed: [172.31.19.177]
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=8    changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=8    changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=8    changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 ~]$ cat ne.yaml 
+- name: Install Node Exporter
+  hosts: all
+  become: yes
+
+  vars:
+    node_exporter_version: "1.8.1"
+    node_exporter_user: "nodeusr"
+    node_exporter_port: 9100
+
+  tasks:
+
+    - name: Create node exporter user
+      ansible.builtin.user:
+        name: "{{ node_exporter_user }}"
+        shell: /sbin/nologin
+        system: yes
+
+    - name: Download node exporter
+      ansible.builtin.get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+        dest: /tmp/node_exporter.tar.gz
+
+    - name: Extract node exporter
+      ansible.builtin.unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Copy binary
+      ansible.builtin.copy:
+        src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+        dest: /usr/local/bin/node_exporter
+        mode: '0755'
+        remote_src: yes
+
+    - name: Create systemd service file
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+
+          [Service]
+          User={{ node_exporter_user }}
+          ExecStart=/usr/local/bin/node_exporter --web.listen-address=:{{ node_exporter_port }}
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd
+      ansible.builtin.command: systemctl daemon-reexec
+
+    - name: Enable and start node exporter
+      ansible.builtin.service:
+        name: node_exporter
+        state: started
+        enabled: yes
+[ec2-user@ip-172-31-31-72 ~]$ 
+
+
+http://54.209.38.20:9100/
+
+able to open node exporter
+
+Node Exporter
+Prometheus Node Exporter
+Version: (version=1.8.1, branch=HEAD, revision=400c3979931613db930ea035f39ce7b377cdbb5b)
+Metrics
+
+
+UI results above 
+
+
+==============
+
+ec2-user@ip-172-31-31-72 ~]$ git clone https://github.com/CloudTechDevOps/devops-ansible-final.git
+Cloning into 'devops-ansible-final'...
+remote: Enumerating objects: 147, done.
+remote: Counting objects: 100% (147/147), done.
+remote: Compressing objects: 100% (73/73), done.
+remote: Total 147 (delta 51), reused 147 (delta 51), pack-reused 0 (from 0)
+Receiving objects: 100% (147/147), 27.84 KiB | 6.96 MiB/s, done.
+Resolving deltas: 100% (51/51), done.
+[ec2-user@ip-172-31-31-72 ~]$ pwd 
+/home/ec2-user
+[ec2-user@ip-172-31-31-72 ~]$ cd in
+-bash: cd: in: No such file or directory
+[ec2-user@ip-172-31-31-72 ~]$ cd devops-ansible-final/
+[ec2-user@ip-172-31-31-72 devops-ansible-final]$ cd include_module/
+[ec2-user@ip-172-31-31-72 include_module]$ ls
+child_copy.yaml  child_install.yaml  child_restart.yaml  child_start.yaml  index.html  main.yaml
+[ec2-user@ip-172-31-31-72 include_module]$ ll
+total 24
+-rw-r--r--. 1 ec2-user ec2-user  93 Jun  2 07:46 child_copy.yaml
+-rw-r--r--. 1 ec2-user ec2-user  86 Jun  2 07:46 child_install.yaml
+-rw-r--r--. 1 ec2-user ec2-user  77 Jun  2 07:46 child_restart.yaml
+-rw-r--r--. 1 ec2-user ec2-user  75 Jun  2 07:46 child_start.yaml
+-rw-r--r--. 1 ec2-user ec2-user 422 Jun  2 07:46 index.html
+-rw-r--r--. 1 ec2-user ec2-user 267 Jun  2 07:46 main.yaml
+[ec2-user@ip-172-31-31-72 include_module]$ ansible-playbook main.yaml --syntax-check
+
+playbook: main.yaml
+[ec2-user@ip-172-31-31-72 include_module]$ ansible-playbook main.yaml
+
+PLAY [call all child playbooks] ***********************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+[WARNING]: Platform linux on host 172.31.20.209 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.20.209]
+[WARNING]: Platform linux on host 172.31.19.177 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.177]
+[WARNING]: Platform linux on host 172.31.19.227 is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.15/reference_appendices/interpreter_discovery.html for more information.
+ok: [172.31.19.227]
+
+TASK [call child playbook] ****************************************************************************************************************************************************************************************
+included: /home/ec2-user/devops-ansible-final/include_module/child_install.yaml for 172.31.20.209, 172.31.19.177, 172.31.19.227 => (item=child_install.yaml)
+included: /home/ec2-user/devops-ansible-final/include_module/child_start.yaml for 172.31.20.209, 172.31.19.177, 172.31.19.227 => (item=child_start.yaml)
+included: /home/ec2-user/devops-ansible-final/include_module/child_copy.yaml for 172.31.20.209, 172.31.19.177, 172.31.19.227 => (item=child_copy.yaml)
+included: /home/ec2-user/devops-ansible-final/include_module/child_restart.yaml for 172.31.20.209, 172.31.19.177, 172.31.19.227 => (item=child_restart.yaml)
+
+TASK [install with with include module] ***************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+ok: [172.31.19.227]
+ok: [172.31.19.177]
+
+TASK [start web server] *******************************************************************************************************************************************************************************************
+ok: [172.31.20.209]
+ok: [172.31.19.227]
+ok: [172.31.19.177]
+
+TASK [copying the files] ******************************************************************************************************************************************************************************************
+changed: [172.31.19.227]
+changed: [172.31.20.209]
+changed: [172.31.19.177]
+
+TASK [restart server] *********************************************************************************************************************************************************************************************
+changed: [172.31.20.209]
+changed: [172.31.19.227]
+changed: [172.31.19.177]
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+172.31.19.177              : ok=9    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.19.227              : ok=9    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+172.31.20.209              : ok=9    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-172-31-31-72 include_module]$ cat main.yaml 
+---
+- name: call all child playbooks
+  hosts: all
+  become: yes
+  tasks:
+    - name: call child playbook
+      include_tasks: "{{item}}"
+      with_items: 
+        - child_install.yaml
+        - child_start.yaml
+        - child_copy.yaml
+        - child_restart.yaml
+[ec2-user@ip-172-31-31-72 include_module]$ cat .
+cat: .: Is a directory
+[ec2-user@ip-172-31-31-72 include_module]$ cat *
+---
+- name: copying the files
+  copy:
+    src: index.html
+    dest: /var/www/html/index.html
+---
+- name: install with with include module
+  yum:
+    name: httpd
+    state: latest
+
+---
+- name: restart server
+  service:
+    name: httpd
+    state: restarted
+
+---
+- name: start web server
+  service:
+    name: httpd
+    state: started
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1 style="background-color:DodgerBlue;">Hello World</h1>
+
+<p style="background-color:Tomato;">
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.
+</p>
+
+</body>
+</html>
+---
+- name: call all child playbooks
+  hosts: all
+  become: yes
+  tasks:
+    - name: call child playbook
+      include_tasks: "{{item}}"
+      with_items: 
+        - child_install.yaml
+        - child_start.yaml
+        - child_copy.yaml
+        - child_restart.yaml
+[ec2-user@ip-172-31-31-72 include_module]$ 
+
+
